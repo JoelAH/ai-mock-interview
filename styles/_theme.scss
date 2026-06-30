@@ -1,0 +1,62 @@
+// =============================================================================
+// Shared SCSS helpers for landing modules.
+// Usage in a *.module.scss:  @use '../../styles/theme' as *;
+// (Tokens themselves live as CSS custom properties in globals.scss so they are
+//  reusable at runtime and themeable; this file only holds build-time helpers.)
+// =============================================================================
+
+$bp-sm: 540px;
+$bp-md: 768px;
+$bp-lg: 1024px;
+$bp-xl: 1180px;
+
+// min-width media query helper
+@mixin up($bp) {
+  @media (min-width: $bp) {
+    @content;
+  }
+}
+
+// max-width media query helper
+@mixin down($bp) {
+  @media (max-width: ($bp - 0.02px)) {
+    @content;
+  }
+}
+
+// Centered content column.
+@mixin container {
+  width: 100%;
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+// Vertical rhythm for a full-width section.
+@mixin section {
+  padding-block: clamp(4.5rem, 9vw, 8rem);
+}
+
+// Mono uppercase eyebrow label.
+@mixin eyebrow {
+  font-family: var(--ff-mono);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+// Card surface used across features / pricing / showcase.
+@mixin card {
+  background: linear-gradient(180deg, var(--surface) 0%, var(--bg-2) 100%);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+}
+
+// Thin frosted glass (header, chips).
+@mixin glass {
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+}

@@ -1,0 +1,186 @@
+// =============================================================================
+// Global styles — design tokens + base reset.
+//
+// The palette below is the single source of truth for color across the whole
+// app. It is intentionally distinctive: a deep "ink" base lit by a warm amber
+// (the spotlight of the interview) balanced against a cool signal teal (the
+// calm the product gives you). Reuse these tokens via var(--token) anywhere —
+// a future MUI theme can read the same hex values.
+// =============================================================================
+
+:root {
+  // --- Ink / surfaces (dark-first) ---
+  --bg: #0b0e14; // deepest background
+  --bg-2: #0e121b; // alternating band
+  --surface: #141a27; // card
+  --surface-2: #1a2132; // raised card / inputs
+  --surface-3: #232c41; // hover / chips
+  --line: rgba(255, 255, 255, 0.08); // hairline borders
+  --line-strong: rgba(255, 255, 255, 0.16);
+
+  // --- Text ---
+  --text: #edf0f6; // primary (AAA on --bg)
+  --text-muted: #aeb7ca; // secondary (~9:1 on --bg)
+  --text-faint: #79839a; // tertiary, large text only
+
+  // --- Brand accents ---
+  --amber: #ffb661; // warm primary
+  --amber-deep: #ff9a4d;
+  --amber-ink: #2a1a06; // text that sits on amber fills
+  --teal: #5ee0c7; // cool secondary / "signal"
+  --teal-deep: #2bc0d4;
+  --coral: #ff7a8a; // sparing highlight
+  --violet: #9b8cff; // sparing highlight
+
+  // --- Gradients ---
+  --grad-warm: linear-gradient(135deg, #ffc06b 0%, #ff8a5b 100%);
+  --grad-cool: linear-gradient(135deg, #5ee0c7 0%, #2b96e0 100%);
+  --grad-spot: radial-gradient(
+    60% 60% at 50% 0%,
+    rgba(255, 182, 97, 0.18) 0%,
+    rgba(255, 182, 97, 0) 70%
+  );
+
+  // --- Type families (fed by next/font; fall back gracefully) ---
+  --ff-display: var(--font-display), 'Bricolage Grotesque', system-ui, -apple-system, sans-serif;
+  --ff-sans: var(--font-sans), 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --ff-mono: var(--font-mono), 'Geist Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  // --- Radii / shadows / motion ---
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 24px;
+  --r-xl: 32px;
+  --r-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 18px 40px -20px rgba(0, 0, 0, 0.7);
+  --shadow-glow: 0 0 0 1px var(--line), 0 30px 70px -30px rgba(255, 154, 77, 0.35);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  // --- Layout ---
+  --container: 1180px;
+  --gutter: clamp(1.1rem, 4vw, 2rem);
+
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  // offset for the sticky header when jumping to #anchors
+  scroll-padding-top: 6rem;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--ff-sans);
+  font-size: clamp(1rem, 0.97rem + 0.15vw, 1.0625rem);
+  line-height: 1.6;
+  letter-spacing: -0.011em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--ff-display);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+svg,
+picture {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border: 0;
+  background: none;
+}
+
+::selection {
+  background: var(--amber);
+  color: var(--amber-ink);
+}
+
+// Accessible focus ring everywhere.
+:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+// Skip link for keyboard users.
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 999;
+  padding: 0.6rem 1rem;
+  background: var(--amber);
+  color: var(--amber-ink);
+  border-radius: var(--r-pill);
+  font-weight: 600;
+  transform: translateY(-150%);
+  transition: transform 0.2s var(--ease);
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+// Custom scrollbar (progressive enhancement).
+@supports selector(::-webkit-scrollbar) {
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--surface-3);
+    border: 3px solid var(--bg);
+    border-radius: var(--r-pill);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
