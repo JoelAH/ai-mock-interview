@@ -15,6 +15,26 @@ export const SITE = {
   twitter: '@sinterview',
 } as const;
 
+// -----------------------------------------------------------------------------
+// Legal constants. These are PLACEHOLDERS — replace with your real legal entity,
+// jurisdiction, and contact details, and have an attorney review the documents
+// in app/terms and app/privacy before relying on them.
+// -----------------------------------------------------------------------------
+export const LEGAL = {
+  // The legal entity that operates the service (you / your company).
+  entity: 'Sinterview',
+  // Where the operator is based — drives governing law / venue.
+  governingLaw: '[Your State/Country, e.g. the State of Delaware, USA]',
+  jurisdiction: '[Your county/court venue, e.g. New Castle County, Delaware]',
+  contactEmail: 'legal@sinterview.app',
+  privacyEmail: 'privacy@sinterview.app',
+  // Update whenever you materially change either document.
+  effectiveDate: 'February 1, 2025',
+  // Bump when the voice-recording consent wording changes so prior consent can
+  // be re-collected. Stored alongside each captured consent.
+  consentVersion: '2025-02-01',
+} as const;
+
 export type NavLink = { label: string; href: string };
 
 export const NAV_LINKS: NavLink[] = [

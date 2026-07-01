@@ -1,0 +1,130 @@
+@use '../../styles/theme' as *;
+
+.wrap {
+  @include container;
+  max-width: 56rem;
+  padding-top: clamp(2.5rem, 6vw, 4.5rem);
+  padding-bottom: clamp(3.5rem, 8vw, 6rem);
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+  transition: color 0.15s var(--ease);
+}
+.back:hover {
+  color: var(--text);
+}
+.back svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  transform: rotate(180deg);
+}
+
+.eyebrow {
+  @include eyebrow;
+  display: block;
+  margin-bottom: 0.9rem;
+}
+
+.title {
+  font-size: clamp(2.1rem, 1.4rem + 3vw, 3.2rem);
+}
+
+.meta {
+  margin-top: 0.9rem;
+  color: var(--text-faint);
+  font-size: 0.92rem;
+  font-family: var(--ff-mono);
+}
+
+// Honest "not legal advice / template" notice.
+.notice {
+  display: flex;
+  gap: 0.8rem;
+  margin-top: 2rem;
+  padding: 1.1rem 1.25rem;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--amber) 9%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--amber) 24%, transparent);
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+.notice svg {
+  flex: none;
+  width: 1.3rem;
+  height: 1.3rem;
+  color: var(--amber);
+  margin-top: 0.1rem;
+}
+.notice strong {
+  color: var(--text);
+}
+
+.prose {
+  margin-top: 2.75rem;
+}
+.prose section {
+  scroll-margin-top: 6rem;
+}
+.prose section + section {
+  margin-top: 2.5rem;
+}
+.prose h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.9rem;
+}
+.prose h3 {
+  font-size: 1.12rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+.prose p {
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+.prose ul {
+  color: var(--text-muted);
+  margin: 0 0 1rem;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.5rem;
+}
+.prose li {
+  padding-left: 0.3rem;
+}
+.prose li::marker {
+  color: var(--teal);
+}
+.prose a {
+  color: var(--teal);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose strong {
+  color: var(--text);
+}
+// Emphasis used for the heavy disclaimer blocks (rendered uppercase like real
+// "AS IS" clauses so they are conspicuous, as many statutes require).
+.prose .loud {
+  display: block;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 1rem 1.15rem;
+  margin-bottom: 1rem;
+  font-size: 0.86rem;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  line-height: 1.6;
+}
+.placeholder {
+  color: var(--amber);
+  font-family: var(--ff-mono);
+  font-size: 0.92em;
+}

@@ -1,0 +1,243 @@
+@use '../../styles/theme' as *;
+
+.page {
+  position: relative;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: clamp(1.5rem, 5vw, 3rem) var(--gutter);
+  overflow: hidden;
+}
+.glow {
+  position: absolute;
+  inset: 0;
+  background: var(--grad-spot);
+  pointer-events: none;
+}
+
+.card {
+  @include card;
+  position: relative;
+  width: 100%;
+  max-width: 35rem;
+  padding: clamp(1.6rem, 4vw, 2.4rem);
+  box-shadow: var(--shadow-md);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--ff-display);
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: var(--text);
+  margin-bottom: 1.4rem;
+}
+.brand svg {
+  color: var(--amber);
+}
+.brandDot {
+  color: var(--teal);
+}
+
+.eyebrow {
+  @include eyebrow;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.eyebrow .dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--coral);
+}
+
+.title {
+  margin-top: 0.9rem;
+  font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.1rem);
+}
+.lede {
+  margin-top: 0.7rem;
+  color: var(--text-muted);
+  font-size: 0.98rem;
+}
+
+.points {
+  list-style: none;
+  padding: 0;
+  margin: 1.4rem 0;
+  display: grid;
+  gap: 0.7rem;
+}
+.point {
+  display: flex;
+  gap: 0.65rem;
+  color: var(--text-muted);
+  font-size: 0.93rem;
+}
+.point svg {
+  flex: none;
+  width: 1.2rem;
+  height: 1.2rem;
+  color: var(--teal);
+  margin-top: 0.1rem;
+}
+
+.divider {
+  height: 1px;
+  background: var(--line);
+  margin: 1.4rem 0;
+}
+
+.consentList {
+  display: grid;
+  gap: 0.9rem;
+}
+.consent {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease);
+}
+.consent:hover {
+  border-color: var(--line-strong);
+}
+.consentChecked {
+  border-color: color-mix(in srgb, var(--teal) 55%, transparent);
+  background: color-mix(in srgb, var(--teal) 8%, var(--surface-2));
+}
+.checkbox {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.1rem;
+  accent-color: var(--teal);
+  cursor: pointer;
+}
+.consentBody {
+  font-size: 0.92rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+.required {
+  font-family: var(--ff-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-left: 0.4rem;
+}
+.optional {
+  font-family: var(--ff-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-left: 0.4rem;
+}
+.consentSub {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
+
+.actions {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 0.75rem;
+}
+.primaryBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 1rem 1.4rem;
+  border-radius: var(--r-pill);
+  font-weight: 600;
+  font-size: 1rem;
+  background: var(--grad-warm);
+  color: var(--amber-ink);
+  box-shadow: 0 12px 30px -14px rgba(255, 154, 77, 0.6);
+  transition:
+    transform 0.18s var(--ease),
+    box-shadow 0.18s var(--ease),
+    opacity 0.18s var(--ease);
+}
+.primaryBtn svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+.primaryBtn:not(:disabled):hover {
+  transform: translateY(-2px);
+}
+.primaryBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.textBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  font-weight: 500;
+  padding: 0.5rem;
+}
+.textBtn:hover {
+  color: var(--text);
+}
+
+.fine {
+  margin-top: 1.25rem;
+  color: var(--text-faint);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+.fine a {
+  color: var(--teal);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+// ---- Post-consent placeholder (the Task 9 mic-check lands here) ----
+.statusTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  @include eyebrow;
+  color: var(--teal);
+}
+.statusTag svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+.meterStub {
+  margin: 1.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 3rem;
+  padding: 0 1rem;
+  border-radius: var(--r-md);
+  border: 1px dashed var(--line-strong);
+  background: var(--surface-2);
+}
+.note {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+.note code {
+  font-family: var(--ff-mono);
+  font-size: 0.85em;
+  color: var(--amber);
+}
