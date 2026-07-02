@@ -55,6 +55,10 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.presetSection {
   margin-bottom: 1.5rem;
 }
 
@@ -62,6 +66,24 @@
   font-size: 0.85rem;
   cursor: pointer;
   transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.techSection {
+  margin-top: 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--surface-2);
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+}
+
+.techInputRow {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.techInput {
+  flex: 1;
 }
 
 .errorText {

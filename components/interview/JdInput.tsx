@@ -15,12 +15,22 @@ import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 import styles from './setup.module.scss';
 
 const PRESETS = [
+  { label: 'Junior Frontend Engineer', level: 'Junior', role: 'Frontend Engineer' },
+  { label: 'Intermediate Frontend Engineer', level: 'Intermediate', role: 'Frontend Engineer' },
   { label: 'Senior Frontend Engineer', level: 'Senior', role: 'Frontend Engineer' },
+  { label: 'Junior Backend Engineer', level: 'Junior', role: 'Backend Engineer' },
+  { label: 'Intermediate Backend Engineer', level: 'Intermediate', role: 'Backend Engineer' },
   { label: 'Staff Backend Engineer', level: 'Staff', role: 'Backend Engineer' },
+  { label: 'Junior Full-Stack Engineer', level: 'Junior', role: 'Full-Stack Engineer' },
+  { label: 'Intermediate Full-Stack Engineer', level: 'Intermediate', role: 'Full-Stack Engineer' },
   { label: 'Senior Full-Stack Engineer', level: 'Senior', role: 'Full-Stack Engineer' },
   { label: 'Engineering Manager', level: 'Senior', role: 'Engineering Manager' },
+  { label: 'Intermediate DevOps / SRE', level: 'Intermediate', role: 'DevOps / SRE' },
   { label: 'Senior DevOps / SRE', level: 'Senior', role: 'DevOps / SRE' },
   { label: 'Staff Platform Engineer', level: 'Staff', role: 'Platform Engineer' },
+  { label: 'Junior QA Engineer', level: 'Junior', role: 'QA Engineer' },
+  { label: 'Intermediate QA Engineer', level: 'Intermediate', role: 'QA Engineer' },
+  { label: 'Senior QA Engineer', level: 'Senior', role: 'QA Engineer' },
 ] as const;
 
 export default function JdInput() {
@@ -28,6 +38,8 @@ export default function JdInput() {
   const [mode, setMode] = useState<'paste' | 'preset'>('paste');
   const [jdText, setJdText] = useState('');
   const [selectedPreset, setSelectedPreset] = useState<number | null>(null);
+  const [techInput, setTechInput] = useState('');
+  const [techTags, setTechTags] = useState<string[]>([]);
   const [error, setError] = useState('');
 
   const handleModeChange = (_: unknown, newMode: 'paste' | 'preset' | null) => {
@@ -35,6 +47,25 @@ export default function JdInput() {
       setMode(newMode);
       setError('');
     }
+  };
+
+  const handleAddTech = () => {
+    const trimmed = techInput.trim();
+    if (trimmed && !techTags.includes(trimmed)) {
+      setTechTags([...techTags, trimmed]);
+    }
+    setTechInput('');
+  };
+
+  const handleTechKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      handleAddTech();
+    }
+  };
+
+  const handleRemoveTech = (tag: string) => {
+    setTechTags(techTags.filter((t) => t !== tag));
   };
 
   const handleSubmit = () => {
@@ -58,7 +89,7 @@ export default function JdInput() {
     // Store input in sessionStorage for the review page to pick up
     const payload = mode === 'paste'
       ? { sourceType: 'paste' as const, jdText: jdText.trim() }
-      : { sourceType: 'preset' as const, jdText: PRESETS[selectedPreset!].label };
+      : { sourceType: 'preset' as const, jdText: PRESETS[selectedPreset!].label, tech: techTags };
 
     sessionStorage.setItem('jd-input', JSON.stringify(payload));
     router.push('/interview/setup');
@@ -109,21 +140,57 @@ export default function JdInput() {
             slotProps={{ input: { 'aria-label': 'Job description text' } }}
           />
         ) : (
-          <Box className={styles.presetGrid} role="group" aria-label="Role presets">
-            {PRESETS.map((preset, idx) => (
-              <Chip
-                key={preset.label}
-                label={preset.label}
-                variant={selectedPreset === idx ? 'filled' : 'outlined'}
-                color={selectedPreset === idx ? 'primary' : 'default'}
-                onClick={() => {
-                  setSelectedPreset(idx);
-                  if (error) setError('');
-                }}
-                className={styles.presetChip}
-                aria-pressed={selectedPreset === idx}
-              />
-            ))}
+          <Box className={styles.presetSection}>
+            <Box className={styles.presetGrid} role="group" aria-label="Role presets">
+              {PRESETS.map((preset, idx) => (
+                <Chip
+                  key={preset.label}
+                  label={preset.label}
+                  variant={selectedPreset === idx ? 'filled' : 'outlined'}
+                  color={selectedPreset === idx ? 'primary' : 'default'}
+                  onClick={() => {
+                    setSelectedPreset(idx);
+                    if (error) setError('');
+                  }}
+                  className={styles.presetChip}
+                  aria-pressed={selectedPreset === idx}
+                />
+              ))}
+            </Box>
+
+            {selectedPreset !== null && (
+              <Box className={styles.techSection}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Add technologies, frameworks, or skills (optional)
+                </Typography>
+                <Box className={styles.techInputRow}>
+                  <TextField
+                    size="small"
+                    placeholder="e.g. React, TypeScript, AWS..."
+                    value={techInput}
+                    onChange={(e) => setTechInput(e.target.value)}
+                    onKeyDown={handleTechKeyDown}
+                    onBlur={handleAddTech}
+                    slotProps={{ input: { 'aria-label': 'Add technology' } }}
+                    className={styles.techInput}
+                  />
+                </Box>
+                {techTags.length > 0 && (
+                  <Box className={styles.chipRow} aria-label="Selected technologies">
+                    {techTags.map((tag) => (
+                      <Chip
+                        key={tag}
+                        label={tag}
+                        size="small"
+                        color="secondary"
+                        onDelete={() => handleRemoveTech(tag)}
+                      />
+                    ))}
+                  </Box>
+                )}
+              </Box>
+            )}
+
             {error && mode === 'preset' && (
               <Typography color="error" variant="body2" className={styles.errorText}>
                 {error}
