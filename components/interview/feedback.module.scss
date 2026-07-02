@@ -1,0 +1,271 @@
+@use '../../styles/theme' as *;
+
+// =============================================================================
+// Feedback report screen
+// =============================================================================
+
+.page {
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  padding: clamp(2rem, 5vw, 4rem) var(--gutter);
+  background: var(--bg);
+}
+
+.container {
+  width: 100%;
+  max-width: 700px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+// ---- Score color tiers ----
+.high { --tier-color: var(--teal); }
+.mid { --tier-color: var(--amber); }
+.low { --tier-color: var(--coral); }
+
+// ---- Overall score hero ----
+.scoreHero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+}
+
+.scoreCircle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid var(--tier-color);
+  background: color-mix(in srgb, var(--tier-color) 8%, var(--surface));
+}
+
+.scoreValue {
+  font-weight: 700;
+  color: var(--tier-color);
+  line-height: 1;
+}
+
+.scoreLabel {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.diagnosis {
+  font-size: 1.05rem;
+  color: var(--text-muted);
+  max-width: 30rem;
+}
+
+// ---- Sub-scores row ----
+.subScores {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+
+  @include down($bp-sm) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.subScoreCard {
+  @include card;
+  padding: 1rem;
+  text-align: center;
+}
+
+.subScoreValue {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--tier-color);
+  line-height: 1.2;
+}
+
+.subScoreLabel {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 0.25rem;
+}
+
+// ---- Insight card ----
+.insightCard {
+  @include card;
+  padding: 1.25rem 1.5rem;
+}
+
+.insightLabel {
+  color: var(--amber);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+
+.insightText {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+// ---- Questions section ----
+.questionsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.questionsHeading {
+  margin-bottom: 0.25rem;
+}
+
+.questionItem {
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  overflow: hidden;
+  border-left: 3px solid var(--tier-color);
+}
+
+.questionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+
+  &:hover {
+    background: var(--surface-2);
+  }
+}
+
+.questionHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.typeChip {
+  flex-shrink: 0;
+}
+
+.questionPreview {
+  font-size: 0.88rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.questionHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.questionScore {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--tier-color);
+}
+
+.expandIcon {
+  transition: transform 0.2s ease;
+}
+
+.expandIcon.expanded {
+  transform: rotate(180deg);
+}
+
+// ---- Question detail (expanded) ----
+.questionDetail {
+  padding: 0 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.detailLabel {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+  margin-bottom: 0.2rem;
+}
+
+.detailTranscript {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  padding: 0.75rem;
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+}
+
+.detailScores {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.miniScore {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.5rem 0.85rem;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+}
+
+.miniScoreValue {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--tier-color);
+}
+
+.miniScoreLabel {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.detailNotes {
+  padding: 0.75rem;
+  background: color-mix(in srgb, var(--teal) 5%, var(--surface-2));
+  border-radius: var(--r-sm);
+  border: 1px solid color-mix(in srgb, var(--teal) 20%, transparent);
+}
+
+.notesText {
+  font-size: 0.88rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+// ---- Actions ----
+.actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.practiceBtn {
+  padding: 0.7rem 2rem;
+}
