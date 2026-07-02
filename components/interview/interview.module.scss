@@ -221,23 +221,76 @@
   width: 1.1rem;
   height: 1.1rem;
 }
-.meterStub {
+
+// ---- Audio Level Meter ----
+.meterContainer {
   margin: 1.5rem 0;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  height: 3rem;
-  padding: 0 1rem;
+  padding: 1.25rem;
   border-radius: var(--r-md);
-  border: 1px dashed var(--line-strong);
+  border: 1px solid var(--line);
   background: var(--surface-2);
 }
-.note {
-  color: var(--text-muted);
-  font-size: 0.92rem;
+
+.meterBars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+  height: 4rem;
+  margin-bottom: 0.75rem;
 }
-.note code {
-  font-family: var(--ff-mono);
-  font-size: 0.85em;
-  color: var(--amber);
+
+.meterBar {
+  flex: 1;
+  max-width: 12px;
+  min-height: 4px;
+  border-radius: 2px;
+  background: var(--line-strong);
+  transition: height 0.06s ease-out, background-color 0.2s ease;
+}
+
+.meterBarIdle {
+  height: 15%;
+  animation: pulse 1.2s ease-in-out infinite alternate;
+}
+
+.meterBarActive {
+  background: var(--teal);
+  box-shadow: 0 0 6px rgba(94, 224, 199, 0.3);
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 0.8;
+  }
+}
+
+.meterLabel {
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.meterError {
+  text-align: center;
+  padding: 0.5rem 0;
+}
+
+.meterErrorTitle {
+  font-weight: 600;
+  color: var(--coral);
+  margin-bottom: 0.4rem;
+}
+
+.meterErrorDesc {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+// ---- Mic check actions ----
+.micActions {
+  margin-top: 1.5rem;
 }
