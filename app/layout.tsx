@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Bricolage_Grotesque, Geist, Geist_Mono } from 'next/font/google';
+import { ClerkProvider } from '@clerk/nextjs';
 import { SITE } from '@/lib/site';
+import ThemeRegistry from '@/components/ThemeRegistry';
 import '@/styles/globals.scss';
 
 // Distinctive display face + clean body + mono for labels. Exposed as CSS
@@ -69,10 +71,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
       <body>
-        <a href="#main" className="skip-link">
-          Skip to content
-        </a>
-        {children}
+        <ClerkProvider>
+          <a href="#main" className="skip-link">
+            Skip to content
+          </a>
+          <ThemeRegistry>{children}</ThemeRegistry>
+        </ClerkProvider>
       </body>
     </html>
   );
