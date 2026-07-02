@@ -218,6 +218,13 @@ Each task is a working, demoable increment. Tests use **Vitest + React Testing L
 - Tests: `cdk synth` succeeds; optionally a CDK assertions test that the stack contains the bucket + Lambda.
 - Demo: `cdk synth` outputs a valid CloudFormation template with the bucket and Lambda defined.
 
+#### Task 6b: Dev/Prod environment separation in CDK
+
+- Objective: Configure the CDK app to support separate dev and prod stacks with isolated resources and environment-specific configuration.
+- Guidance: Parameterize the CDK app by environment (e.g. `InfraStack` instantiated twice as `AiMockInterview-Dev` and `AiMockInterview-Prod`). Each stack gets its own S3 bucket (with appropriate retention/lifecycle policies — shorter for dev, stricter for prod), its own Lambda functions, and its own set of environment variables (Mongo URI, API keys via SSM/Secrets Manager). Add a `config/` or `environments/` structure in `/infra` mapping stage → settings. Prod gets deletion protection, access logging, and alarms; dev allows faster iteration (auto-delete on destroy, relaxed retention). Deploy targets are selectable via CLI flag or CI context (e.g. `cdk deploy --context stage=prod`).
+- Tests: `cdk synth` succeeds for both stages; CDK assertions verify each stage has its own bucket with correct lifecycle rules and that prod has deletion protection enabled.
+- Demo: `cdk synth --context stage=dev` and `cdk synth --context stage=prod` produce two distinct CloudFormation templates with environment-appropriate settings.
+
 ### Phase 2 — UI Flow on Mock Data (all 7 screens)
 
 #### Task 7: Mock data layer + shared schemas + service interfaces
