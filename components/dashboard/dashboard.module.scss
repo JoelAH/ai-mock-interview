@@ -1,0 +1,197 @@
+@use '../../styles/theme' as *;
+
+// =============================================================================
+// Dashboard screen
+// =============================================================================
+
+.page {
+  min-height: 100dvh;
+  padding: clamp(2rem, 5vw, 4rem) var(--gutter);
+  background: var(--bg);
+}
+
+.container {
+  width: 100%;
+  max-width: 800px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+// ---- Score color tiers ----
+.high { --tier-color: var(--teal); }
+.mid { --tier-color: var(--amber); }
+.low { --tier-color: var(--coral); }
+
+// ---- Header ----
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.greeting {
+  margin-bottom: 0.25rem;
+}
+
+// ---- Stats row ----
+.statsRow {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 0.75rem;
+
+  @include down($bp-md) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @include down($bp-sm) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.statCard {
+  @include card;
+  padding: 1.25rem;
+  text-align: center;
+  min-width: 100px;
+}
+
+.statValue {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.statLabel {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.trendCard {
+  @include card;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  @include down($bp-md) {
+    grid-column: 1 / -1;
+  }
+}
+
+.trendLabel {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+// ---- Chart ----
+.chartContainer {
+  width: 100%;
+  height: 80px;
+}
+
+.chartSvg {
+  width: 100%;
+  height: 100%;
+}
+
+.chartEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60px;
+
+  p {
+    font-size: 0.85rem;
+    color: var(--text-faint);
+  }
+}
+
+// ---- Session list ----
+.sessionList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sectionTitle {
+  margin-bottom: 0.5rem;
+}
+
+.sessionRow {
+  @include card;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background-color 0.12s ease;
+
+  &:hover {
+    border-color: var(--line-strong);
+    background: var(--surface-2);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+  }
+}
+
+.sessionInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.sessionRole {
+  font-weight: 500;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sessionMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.sessionScore {
+  flex-shrink: 0;
+  margin-left: 1rem;
+}
+
+.scoreValue {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--tier-color, var(--text-muted));
+}
+
+// ---- Empty state ----
+.emptyState {
+  @include card;
+  padding: 3rem 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.emptyTitle {
+  font-weight: 600;
+}
