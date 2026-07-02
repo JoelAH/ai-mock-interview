@@ -1,0 +1,127 @@
+@use '../../styles/theme' as *;
+
+// =============================================================================
+// Shared styles for JD input and setup review screens.
+// =============================================================================
+
+.page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 2rem var(--gutter);
+  background: var(--bg);
+}
+
+.card {
+  @include card;
+  width: 100%;
+  max-width: 640px;
+  padding: clamp(2rem, 4vw, 3rem);
+}
+
+.heading {
+  margin-bottom: 0.5rem;
+}
+
+.subheading {
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+// ---- JD Input ----
+
+.modeToggle {
+  margin-bottom: 1.5rem;
+  width: 100%;
+
+  button {
+    flex: 1;
+    font-size: 0.875rem;
+  }
+}
+
+.textarea {
+  margin-bottom: 1.5rem;
+
+  textarea {
+    font-family: var(--ff-sans);
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+}
+
+.presetGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.presetChip {
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.errorText {
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.submitBtn {
+  width: 100%;
+  padding-block: 0.75rem;
+}
+
+// ---- Setup Review ----
+
+.signalList {
+  margin-bottom: 1.5rem;
+  padding: 0;
+
+  :global(.MuiListItem-root) {
+    padding-inline: 0;
+    align-items: flex-start;
+  }
+
+  :global(.MuiListItemIcon-root) {
+    min-width: 40px;
+    margin-top: 0.4rem;
+  }
+
+  :global(.MuiListItemText-secondary) {
+    color: var(--text);
+    margin-top: 0.25rem;
+  }
+}
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.focusSection {
+  margin-bottom: 2rem;
+  padding: 1rem 1.25rem;
+  background: var(--surface-2);
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+
+  @include down($bp-sm) {
+    flex-direction: column-reverse;
+
+    .submitBtn {
+      width: 100%;
+    }
+  }
+}
