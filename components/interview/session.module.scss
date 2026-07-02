@@ -1,0 +1,202 @@
+@use '../../styles/theme' as *;
+
+// =============================================================================
+// Live interview session screen
+// =============================================================================
+
+.page {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 1.5rem var(--gutter);
+}
+
+.container {
+  width: 100%;
+  max-width: 700px;
+}
+
+// ---- Progress header ----
+.header {
+  margin-bottom: 2rem;
+}
+
+.progressBar {
+  margin-top: 0.5rem;
+  border-radius: 4px;
+  height: 6px;
+
+  :global(.MuiLinearProgress-bar) {
+    background: var(--grad-warm);
+    border-radius: 4px;
+  }
+}
+
+// ---- Question card ----
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.questionCard {
+  @include card;
+  padding: 1.5rem;
+}
+
+.questionMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.questionText {
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+// ---- Phase indicator ----
+.phaseIndicator {
+  display: flex;
+  justify-content: center;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+
+  p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+}
+
+.statusBadge[data-phase='listening'] {
+  border-color: color-mix(in srgb, var(--teal) 40%, transparent);
+  background: color-mix(in srgb, var(--teal) 6%, var(--surface-2));
+
+  p {
+    color: var(--teal);
+  }
+}
+
+.statusBadge[data-phase='asking'],
+.statusBadge[data-phase='thinking'] {
+  border-color: color-mix(in srgb, var(--amber) 30%, transparent);
+}
+
+.pulsingDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--amber);
+  animation: pulse-dot 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.micIcon {
+  color: var(--teal);
+}
+
+// ---- Transcript ----
+.transcriptCard {
+  padding: 1.25rem;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  min-height: 80px;
+}
+
+.transcriptLabel {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+  color: var(--text-faint);
+}
+
+.transcriptText {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--teal);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: blink 0.8s step-end infinite;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+// ---- Controls ----
+.controls {
+  display: flex;
+  justify-content: center;
+}
+
+.doneBtn {
+  padding: 0.7rem 2rem;
+}
+
+// ---- Done / completion state ----
+.doneCard {
+  @include card;
+  padding: 2.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.doneIcon {
+  font-size: 3rem;
+  color: var(--teal);
+  margin-bottom: 0.5rem;
+}
+
+.doneTitle {
+  font-weight: 600;
+}
+
+.doneSubtitle {
+  max-width: 28rem;
+  margin-bottom: 0.5rem;
+}
+
+.feedbackBtn {
+  margin-top: 0.5rem;
+  padding: 0.75rem 2.5rem;
+}
