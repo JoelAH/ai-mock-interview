@@ -119,6 +119,8 @@ sequenceDiagram
 
 ## Data Model (Mongoose collections)
 
+> **Interview types:** `behavioral` (past experience, STAR method, soft skills), `technical` (language/framework knowledge, CS fundamentals, explain-a-concept), `architectural` (system design, tradeoffs, scaling), `mix` (combination of the above).
+
 ```mermaid
 erDiagram
     users ||--o{ interviewSessions : has
@@ -228,7 +230,7 @@ Each task is a working, demoable increment. Tests use **Vitest + React Testing L
 #### Task 8: JD input + interview setup review screens
 
 - Objective: Build screens 2 and 3 on mock data.
-- Guidance: JD input page (paste textarea or pick a role/level preset). On submit, route to a setup-review page showing mock parsed signals (role, seniority, stack, culture), interview type (behavioral/architectural/mix), estimated length, and focus areas, with a "Start interview" CTA. MUI forms + SCSS layout.
+- Guidance: JD input page (paste textarea or pick a role/level preset). On submit, route to a setup-review page showing mock parsed signals (role, seniority, stack, culture), interview type (behavioral/technical/architectural/mix), estimated length, and focus areas, with a "Start interview" CTA. MUI forms + SCSS layout.
 - Tests: Component tests for form validation and that review renders mock signals.
 - Demo: Paste a JD (or pick a preset) → see a populated setup-review screen → click Start.
 
