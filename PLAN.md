@@ -2,7 +2,7 @@
 
 ## Problem Statement
 
-Build a working v1 of a web SaaS where software engineers practice spoken behavioral and architectural interviews with an AI interviewer. The product parses a job description, conducts a realistic voice interview (TTS questions + streaming STT answers + adaptive follow-ups), and produces a scored feedback report. Scope is deliberately small: voice-only, web-only, practice-only, single subscription tier, solo-maintainable.
+Build a working v1 of a web SaaS where software engineers practice spoken behavioral and architectural interviews with an AI interviewer. The product parses a job description, conducts a realistic voice interview (TTS questions + streaming STT answers + adaptive follow-ups), and produces a scored feedback report. Scope is deliberately small: voice-only, web-only, practice-only, solo-maintainable. Monetization uses **multiple subscription tiers** differentiated by monthly session cap and voice quality (see Pricing & Tiers below).
 
 ## Requirements (from gathering)
 
@@ -11,7 +11,22 @@ Build a working v1 of a web SaaS where software engineers practice spoken behavi
 - **Lambda boundary:** Conservative. Scaffold CDK + S3 now; keep JD parsing, orchestrator, and feedback in the service layer (called by Next.js API routes initially). Promote to Lambda only if latency/long-running work demands it — extraction is trivial since services have no framework coupling.
 - **Styling:** Material UI (components + theme) plus SCSS modules. No Tailwind.
 - **Build order:** UI flow on mock data first, then wire real services.
-- **Cross-cutting:** Provider-agnostic LLM layer (OpenAI first), lean per-turn prompts, streaming everywhere to mask latency, silent background scoring, cost-conscious API usage, boring/maintainable tools.
+- **Cross-cutting:** Provider-agnostic LLM layer (OpenAI first), provider-agnostic TTS layer (OpenAI TTS for MVP; ElevenLabs reserved for the top tier), lean per-turn prompts, streaming everywhere to mask latency, silent background scoring, cost-conscious API usage, boring/maintainable tools.
+- **Voice providers:** STT is Deepgram Nova-3 (cheapest streaming + best accuracy). TTS is provider-agnostic behind a factory: **OpenAI `gpt-4o-mini-tts` for all tiers in MVP** (~$0.15/session), with **ElevenLabs** wired as the Premium-tier voice upgrade once validated (~$0.50–1.00/session). The provider is resolved per session from the user's tier config, so switching Premium to ElevenLabs is a one-line config change with no code rewrite.
+
+## Pricing & Tiers
+
+Three subscription tiers, differentiated by monthly session cap and voice quality. Session caps protect per-user margin; voice quality is the Premium upgrade hook. Estimated variable cost/session: ~$0.50 (OpenAI TTS stack) / ~$0.85–1.35 (ElevenLabs stack), covering Deepgram STT + TTS + OpenAI LLM.
+
+| Tier | Price/mo | Sessions/mo | Voice (MVP) | Voice (target) |
+|---|---|---|---|---|
+| Starter | $19 | 8 | OpenAI TTS | OpenAI TTS |
+| Pro | $39 | 25 | OpenAI TTS | OpenAI TTS |
+| Premium | $79 | 30 | OpenAI TTS | ElevenLabs |
+
+- **Free trial:** 1 free session, no card required, to demonstrate voice quality + feedback before conversion.
+- **Gating:** `billingService.canCreateSession(userId)` checks the user's session count for the current calendar month against their tier cap.
+- **MVP simplification:** all tiers use OpenAI TTS at launch; Premium flips to ElevenLabs by changing one field in the tier config.
 
 ## Background / Research Notes
 
@@ -132,6 +147,7 @@ erDiagram
         string email
         string lemonCustomerId
         string subscriptionStatus
+        string subscriptionTier
         string subscriptionId
         date   createdAt
     }
@@ -301,12 +317,12 @@ Each task is a working, demoable increment. Tests use **Vitest + React Testing L
 - Tests: Service tests with mocked LLM for probe vs advance branches; assert lean payload (no full JD) and persistence. Route handler test asserting streaming response format.
 - Demo: A spoken answer produces a context-aware follow-up or advances appropriately.
 
-#### Task 17: ElevenLabs TTS streaming + full live loop integration
+#### Task 17: TTS streaming (provider-agnostic) + full live loop integration
 
-- Objective: Voice out, integrated with everything above, with TTS encapsulated in an integration wrapper.
-- Guidance: `/lib/integrations/elevenlabs.ts` exposes `streamTextToSpeech(text: AsyncIterable<string>): AsyncIterable<Uint8Array>` — pure async streaming, no HTTP awareness. Route handler pipes orchestrator text into this integration and streams audio to the client so playback can begin before the full text is ready; show "interviewer is thinking" during the gap. Key stays server-side. Replace the mock turn loop in screen 5 with the real STT → orchestrator → TTS pipeline. Optionally persist audio to S3 via `/lib/integrations/storage.ts`. The streaming protocol (SSE or chunked) is documented so mobile/desktop clients can implement the same playback.
-- Tests: Integration wrapper unit tests (mocked ElevenLabs SDK); route-level streaming test; manual latency check against the 2–3s target.
-- Demo: A full real voice interview — hear questions, answer aloud, get adaptive follow-ups.
+- Objective: Voice out, integrated with everything above, behind a provider-agnostic TTS factory.
+- Guidance: `/lib/integrations/tts/` exposes a factory `getTtsProvider(provider)` returning an adapter with `streamTextToSpeech(text: AsyncIterable<string>): AsyncIterable<Uint8Array>` — pure async streaming, no HTTP awareness. Adapters: `openai` (MVP default for all tiers), `elevenlabs` (Premium target), and `mock`. The active provider is resolved per session from the user's tier config (see `lib/config/tiers.ts`). Route handler pipes orchestrator text into the resolved provider and streams audio to the client so playback can begin before the full text is ready; show "interviewer is thinking" during the gap. Keys stay server-side. Replace the mock turn loop in screen 5 with the real STT → orchestrator → TTS pipeline. Optionally persist audio to S3 via `/lib/integrations/storage.ts`. The streaming protocol (SSE or chunked) is documented so mobile/desktop clients can implement the same playback.
+- Tests: Adapter unit tests (mocked SDKs) for both openai + elevenlabs; factory resolves the right adapter per tier; route-level streaming test; manual latency check against the 2–3s target.
+- Demo: A full real voice interview — hear questions, answer aloud, get adaptive follow-ups. Premium users (once flipped) hear the ElevenLabs voice.
 
 ### Phase 5 — Feedback Generation
 
@@ -319,12 +335,13 @@ Each task is a working, demoable increment. Tests use **Vitest + React Testing L
 
 ### Phase 6 — Payments
 
-#### Task 19: Lemon Squeezy single-tier subscription + webhook sync
+#### Task 19: Lemon Squeezy multi-tier subscriptions + webhook sync
 
-- Objective: One paid tier, end to end, with billing logic in the service layer.
-- Guidance: Checkout link/overlay for a single subscription product. `/lib/integrations/lemonsqueezy.ts` wraps signature verification and event parsing. `billingService.handleWebhookEvent(event)` processes subscription lifecycle changes and syncs `subscriptionStatus`/IDs onto the `users` doc via `userRepository`. Route handler `/api/webhooks/lemonsqueezy` calls the integration to verify + parse, then delegates to the service. Gate interview creation on an active subscription via `billingService.canCreateSession(userId): boolean`; show subscription state in the dashboard. The gating function is reusable by any client's route handler.
-- Tests: Integration wrapper tests (valid + tampered signature); service tests (created/updated/cancelled states); gating logic test.
-- Demo: Subscribe via test mode → status syncs to MongoDB → gated features unlock; cancel → access reflects it.
+- Objective: Three paid tiers (Starter/Pro/Premium), end to end, with billing logic in the service layer. Tier definitions (price, monthly session cap, TTS provider) live in `lib/config/tiers.ts`.
+- Guidance: Checkout links/overlay for three subscription products (one variant per tier). `/lib/integrations/lemonsqueezy.ts` wraps signature verification and event parsing. `billingService.handleWebhookEvent(event)` processes subscription lifecycle changes and syncs `subscriptionStatus`, `subscriptionTier`, and IDs onto the `users` doc via `userRepository` (the tier is resolved from the Lemon Squeezy variant/product ID). Route handler `/api/webhooks/lemonsqueezy` calls the integration to verify + parse, then delegates to the service. Gate interview creation via `billingService.canCreateSession(userId): boolean`, which checks an active subscription AND the current calendar-month session count against the user's tier cap (`sessionRepository.countByUserThisMonth`). Show tier + remaining sessions in the dashboard. The gating function is reusable by any client's route handler. The TTS provider for a session is resolved from the user's tier via `tierConfig[tier].ttsProvider`.
+- **REQUIRED — checkout ↔ user mapping:** The checkout MUST pass the Clerk user ID into Lemon Squeezy's `custom_data` as `clerk_user_id` (via the checkout link's `checkout[custom][clerk_user_id]` param or the JS overlay's `custom` field). `billingService.handleWebhookEvent` reads `event.data.attributes.custom_data.clerk_user_id` to map the subscription back to a local `users` doc; **without it the webhook cannot identify the user and silently no-ops** (user_email is only a fallback and is not guaranteed to match the Clerk email). Populate the per-tier variant IDs in env (`LEMONSQUEEZY_VARIANT_STARTER` / `_PRO` / `_PREMIUM`) so `resolveTierFromVariantId` can map the purchased variant to a tier.
+- Tests: Integration wrapper tests (valid + tampered signature); service tests (created/updated/cancelled states, tier resolution, and the missing-`clerk_user_id` no-op path); gating logic tests (under cap allows, at cap blocks, inactive blocks); tier config resolves the right TTS provider.
+- Demo: Subscribe to each tier via test mode → status + tier sync to MongoDB → session cap enforced per tier; cancel → access reflects it.
 
 ---
 

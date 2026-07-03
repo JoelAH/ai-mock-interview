@@ -18,6 +18,19 @@ export const sessionRepository = {
     return InterviewSession.find({ userId }).sort({ createdAt: -1 }).lean();
   },
 
+  /**
+   * Counts sessions created by a user in the current calendar month (UTC).
+   * Used to enforce per-tier monthly session caps.
+   */
+  async countByUserThisMonth(userId: string, now: Date = new Date()): Promise<number> {
+    await dbConnect();
+    const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    return InterviewSession.countDocuments({
+      userId,
+      createdAt: { $gte: startOfMonth },
+    });
+  },
+
   async updateStatus(id: string, status: InterviewSessionDTO['status']) {
     await dbConnect();
     return InterviewSession.findByIdAndUpdate(id, { $set: { status } }, { returnDocument: 'after', lean: true });

@@ -24,7 +24,9 @@ export const userRepository = {
 
   async updateSubscription(
     clerkUserId: string,
-    fields: Pick<UserDTO, 'subscriptionStatus' | 'subscriptionId' | 'lemonCustomerId'>,
+    fields: Partial<
+      Pick<UserDTO, 'subscriptionStatus' | 'subscriptionTier' | 'subscriptionId' | 'lemonCustomerId'>
+    >,
   ) {
     await dbConnect();
     return User.findOneAndUpdate({ clerkUserId }, { $set: fields }, { returnDocument: 'after', lean: true });

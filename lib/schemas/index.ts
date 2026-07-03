@@ -1,7 +1,10 @@
 export {
   userSchema,
   subscriptionStatusEnum,
+  subscriptionTierEnum,
   type UserDTO,
+  type SubscriptionStatus,
+  type SubscriptionTierName,
 } from './user';
 
 export {

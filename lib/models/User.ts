@@ -10,6 +10,11 @@ const userSchema = new Schema(
       enum: ['active', 'cancelled', 'past_due', 'paused', 'trialing', 'none'],
       default: 'none',
     },
+    subscriptionTier: {
+      type: String,
+      enum: ['free', 'starter', 'pro', 'premium'],
+      default: 'free',
+    },
     subscriptionId: { type: String, default: null },
   },
   { timestamps: true },

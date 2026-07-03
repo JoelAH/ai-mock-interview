@@ -9,11 +9,17 @@ export const subscriptionStatusEnum = z.enum([
   'none',
 ]);
 
+export const subscriptionTierEnum = z.enum(['free', 'starter', 'pro', 'premium']);
+
+export type SubscriptionStatus = z.infer<typeof subscriptionStatusEnum>;
+export type SubscriptionTierName = z.infer<typeof subscriptionTierEnum>;
+
 export const userSchema = z.object({
   clerkUserId: z.string().min(1),
   email: z.string().email(),
   lemonCustomerId: z.string().nullable().default(null),
   subscriptionStatus: subscriptionStatusEnum.default('none'),
+  subscriptionTier: subscriptionTierEnum.default('free'),
   subscriptionId: z.string().nullable().default(null),
 });
 
