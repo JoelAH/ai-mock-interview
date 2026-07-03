@@ -2,10 +2,12 @@
  * Session Service — manages the live interview turn loop.
  *
  * Framework-agnostic: no HTTP or Next.js imports.
- * Currently uses mock data; Task 16 will wire in the real orchestrator.
+ * In mock mode, advances through fixture questions deterministically.
+ * In production mode, calls the LLM orchestrator for adaptive follow-ups.
  */
 import type { SessionTurnResponse, SessionStatusResponse, TurnChunk } from '@/lib/schemas';
 import { mockQuestions, mockSessionId } from '@/lib/mock';
+import { isMockMode } from '@/lib/env';
 
 export interface ISessionService {
   /**
@@ -36,10 +38,13 @@ export interface ISessionService {
   end(userId: string, sessionId: string): Promise<void>;
 }
 
-// Track mock turn index per session for stateful progression
+// ---------------------------------------------------------------------------
+// Mock implementation — stateful turn progression through fixture questions.
+// ---------------------------------------------------------------------------
+
 const turnIndexes = new Map<string, number>();
 
-export const sessionService: ISessionService = {
+const mockSessionService: ISessionService = {
   async processTurn(_userId: string, sessionId: string, _transcript: string): Promise<SessionTurnResponse> {
     const currentIndex = turnIndexes.get(sessionId) ?? 0;
     const nextIndex = Math.min(currentIndex + 1, mockQuestions.length - 1);
@@ -87,9 +92,9 @@ export const sessionService: ISessionService = {
     };
   },
 
-  async start(_userId: string, _sessionId: string): Promise<SessionTurnResponse> {
+  async start(_userId: string, sessionId: string): Promise<SessionTurnResponse> {
     const question = mockQuestions[0];
-    turnIndexes.set(_sessionId, 0);
+    turnIndexes.set(sessionId, 0);
     return {
       questionText: question.text,
       questionType: question.type,
@@ -101,5 +106,54 @@ export const sessionService: ISessionService = {
 
   async end(_userId: string, sessionId: string): Promise<void> {
     turnIndexes.delete(sessionId);
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Real implementation placeholder — wired in Task 16.
+// ---------------------------------------------------------------------------
+
+const realSessionService: ISessionService = {
+  async processTurn(_userId, _sessionId, _transcript) {
+    // Task 16: call streamCompletion via LLM layer, persist turn via questionRepository.
+    throw new Error('Real session orchestrator not yet implemented. Set USE_MOCKS=true or implement Task 16.');
+  },
+
+  async *processTurnStream(_userId, _sessionId, _transcript) {
+    throw new Error('Real session orchestrator not yet implemented. Set USE_MOCKS=true or implement Task 16.');
+  },
+
+  async getStatus(_userId, _sessionId) {
+    throw new Error('Real session status not yet implemented. Set USE_MOCKS=true or implement Task 16.');
+  },
+
+  async start(_userId, _sessionId) {
+    throw new Error('Real session start not yet implemented. Set USE_MOCKS=true or implement Task 16.');
+  },
+
+  async end(_userId, _sessionId) {
+    throw new Error('Real session end not yet implemented. Set USE_MOCKS=true or implement Task 16.');
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Export — resolved at call time based on environment.
+// ---------------------------------------------------------------------------
+
+export const sessionService: ISessionService = {
+  processTurn(...args) {
+    return isMockMode() ? mockSessionService.processTurn(...args) : realSessionService.processTurn(...args);
+  },
+  processTurnStream(...args) {
+    return isMockMode() ? mockSessionService.processTurnStream(...args) : realSessionService.processTurnStream(...args);
+  },
+  getStatus(...args) {
+    return isMockMode() ? mockSessionService.getStatus(...args) : realSessionService.getStatus(...args);
+  },
+  start(...args) {
+    return isMockMode() ? mockSessionService.start(...args) : realSessionService.start(...args);
+  },
+  end(...args) {
+    return isMockMode() ? mockSessionService.end(...args) : realSessionService.end(...args);
   },
 };

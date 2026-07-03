@@ -2,10 +2,12 @@
  * JD Service — parses job descriptions and extracts signals.
  *
  * Framework-agnostic: no HTTP or Next.js imports.
- * Currently uses mock data; Task 14 will wire in the real LLM call.
+ * In mock mode, returns static fixtures. In production mode, calls the
+ * LLM layer for structured extraction and persists via repositories.
  */
 import type { JdParseResponse } from '@/lib/schemas';
 import { mockJdParseResponse } from '@/lib/mock';
+import { isMockMode } from '@/lib/env';
 
 export interface IJdService {
   /**
@@ -16,10 +18,20 @@ export interface IJdService {
 }
 
 export const jdService: IJdService = {
-  async parse(_userId: string, _jdText: string, _sourceType: 'paste' | 'preset'): Promise<JdParseResponse> {
-    // Mock implementation — returns static parsed signals.
-    // Real implementation (Task 14) will call generateStructuredOutput via the LLM layer
-    // and persist to interviewSessions via the repository.
-    return mockJdParseResponse;
+  async parse(userId: string, jdText: string, sourceType: 'paste' | 'preset'): Promise<JdParseResponse> {
+    if (isMockMode()) {
+      // Return static fixtures — no LLM call, no DB write.
+      return mockJdParseResponse;
+    }
+
+    // Real implementation (Task 14):
+    // 1. Call generateStructuredOutput via the LLM layer to extract signals from jdText.
+    // 2. Persist a new interviewSession via sessionRepository.
+    // 3. Return the parsed result matching JdParseResponse schema.
+    //
+    // Placeholder until the LLM layer + repository wiring is complete:
+    throw new Error(
+      'Real JD parsing not yet implemented. Set USE_MOCKS=true or implement Task 14.',
+    );
   },
 };
