@@ -31,6 +31,12 @@ export {
 } from './feedbackReport';
 
 export {
+  jdParsingResultSchema,
+  JD_PARSING_SCHEMA_NAME,
+  type JdParsingResult,
+} from './jdParsing';
+
+export {
   jdParseRequestSchema,
   jdParseResponseSchema,
   sessionTurnRequestSchema,
