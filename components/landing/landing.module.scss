@@ -830,11 +830,14 @@
 .planGrid {
   display: grid;
   gap: 1.25rem;
-  max-width: 56rem;
+  max-width: 76rem;
   margin-inline: auto;
   @include up($bp-md) {
     grid-template-columns: repeat(2, 1fr);
-    align-items: center;
+    align-items: stretch;
+  }
+  @include up($bp-lg) {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 .plan {

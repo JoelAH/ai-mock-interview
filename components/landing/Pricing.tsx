@@ -7,10 +7,10 @@ export function Pricing() {
     <section id="pricing" className={`${styles.section} ${styles.container}`}>
       <div className={`${styles.sectionHead} ${styles.center}`}>
         <span className={styles.eyebrow}>Pricing</span>
-        <h2 className={styles.sectionTitle}>One honest plan for interview season.</h2>
+        <h2 className={styles.sectionTitle}>Plans that scale with your interview season.</h2>
         <p className={styles.sectionLede}>
-          Start free to feel the loop. Go Pro when you are actively interviewing — and cancel the
-          moment you sign the offer.
+          Start free to feel the loop. Step up as the loop heats up — and cancel the moment you sign
+          the offer.
         </p>
       </div>
 
