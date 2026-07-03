@@ -1,10 +1,13 @@
 /**
  * OpenAI LLM adapter — implements the provider-agnostic interface
- * using the OpenAI API (chat completions, structured output, streaming).
+ * using the OpenAI SDK (chat completions, structured output via zodResponseFormat, streaming).
  *
- * This is a placeholder skeleton. The full implementation is wired in Task 13.
- * It exists now so the factory can reference it and the type system is satisfied.
+ * No framework imports — usable from Next.js routes, Lambda, CLI, anywhere.
+ * Keys stay server-side; requireEnv() returns a placeholder in mock mode
+ * so this module can be safely imported even when the key is absent.
  */
+import OpenAI from 'openai';
+import { zodResponseFormat } from 'openai/helpers/zod';
 import type { z } from 'zod';
 import type {
   LLMAdapter,
@@ -12,28 +15,117 @@ import type {
   StructuredOutputOptions,
   StreamCompletionOptions,
 } from './types';
+import { requireEnv } from '@/lib/env';
 
+// ---------------------------------------------------------------------------
+// Client singleton (lazy init to avoid import-time errors when key is missing)
+// ---------------------------------------------------------------------------
+let _client: OpenAI | null = null;
+
+function getClient(): OpenAI {
+  if (!_client) {
+    _client = new OpenAI({
+      apiKey: requireEnv('OPENAI_API_KEY'),
+    });
+  }
+  return _client;
+}
+
+/** Exported for testing — allows injecting a mock OpenAI client. */
+export function _setClientForTesting(client: OpenAI | null): void {
+  _client = client;
+}
+
+// ---------------------------------------------------------------------------
+// Default model configuration
+// ---------------------------------------------------------------------------
+const DEFAULT_MODEL = 'gpt-4o-mini';
+
+// ---------------------------------------------------------------------------
+// Adapter implementation
+// ---------------------------------------------------------------------------
 export const openaiAdapter: LLMAdapter = {
-  async generateCompletion(_options: CompletionOptions): Promise<string> {
-    // Task 13: implement using OpenAI SDK chat.completions.create()
-    throw new Error(
-      'OpenAI adapter not yet implemented. Set USE_MOCKS=true or implement Task 13.',
-    );
+  /**
+   * Generate a plain text completion using chat.completions.create().
+   */
+  async generateCompletion(options: CompletionOptions): Promise<string> {
+    const client = getClient();
+
+    const response = await client.chat.completions.create({
+      model: options.model ?? DEFAULT_MODEL,
+      messages: options.messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      })),
+      temperature: options.temperature ?? 0.7,
+      max_tokens: options.maxTokens,
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error('OpenAI returned an empty completion.');
+    }
+    return content;
   },
 
+  /**
+   * Generate structured JSON output validated against a Zod schema.
+   * Uses the OpenAI SDK's beta .parse() method with zodResponseFormat.
+   */
   async generateStructuredOutput<T extends z.ZodType>(
-    _options: StructuredOutputOptions<T>,
+    options: StructuredOutputOptions<T>,
   ): Promise<z.infer<T>> {
-    // Task 13: implement using function calling / JSON mode
-    throw new Error(
-      'OpenAI adapter not yet implemented. Set USE_MOCKS=true or implement Task 13.',
-    );
+    const client = getClient();
+
+    const response = await client.chat.completions.parse({
+      model: options.model ?? DEFAULT_MODEL,
+      messages: options.messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      })),
+      temperature: options.temperature ?? 0.3,
+      max_tokens: options.maxTokens,
+      response_format: zodResponseFormat(options.schema, options.schemaName),
+    });
+
+    const parsed = response.choices[0]?.message?.parsed;
+    if (parsed === null || parsed === undefined) {
+      // Fallback: if the model refused or returned no parseable content
+      const refusal = response.choices[0]?.message?.refusal;
+      if (refusal) {
+        throw new Error(`OpenAI refused the request: ${refusal}`);
+      }
+      throw new Error(
+        'OpenAI returned no structured output. The response could not be parsed against the schema.',
+      );
+    }
+
+    return parsed;
   },
 
-  async *streamCompletion(_options: StreamCompletionOptions): AsyncIterable<string> {
-    // Task 13: implement using stream: true on chat.completions.create()
-    throw new Error(
-      'OpenAI adapter not yet implemented. Set USE_MOCKS=true or implement Task 13.',
-    );
+  /**
+   * Stream a completion as an async iterable of text chunks.
+   * Yields each content delta as it arrives from the API.
+   */
+  async *streamCompletion(options: StreamCompletionOptions): AsyncIterable<string> {
+    const client = getClient();
+
+    const stream = await client.chat.completions.create({
+      model: options.model ?? DEFAULT_MODEL,
+      messages: options.messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      })),
+      temperature: options.temperature ?? 0.7,
+      max_tokens: options.maxTokens,
+      stream: true,
+    });
+
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta?.content;
+      if (delta) {
+        yield delta;
+      }
+    }
   },
 };
