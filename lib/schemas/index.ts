@@ -43,6 +43,15 @@ export {
 } from './orchestrator';
 
 export {
+  answerScoringResultSchema,
+  ANSWER_SCORING_SCHEMA_NAME,
+  reportGenerationResultSchema,
+  REPORT_GENERATION_SCHEMA_NAME,
+  type AnswerScoringResult,
+  type ReportGenerationResult,
+} from './feedback';
+
+export {
   jdParseRequestSchema,
   jdParseResponseSchema,
   sessionTurnRequestSchema,
