@@ -38,8 +38,9 @@ have** can follow in the first few weeks.
 
 ### Voice-recording consent — server persistence
 
-- [ ] When the live session loop is built, persist the `ConsentResult` (`{ retainAudio, version, at }`) server-side against the user record as durable proof of consent
+- [ ] Persist the `ConsentResult` (`{ retainAudio, version, at }`) server-side against the user record as durable proof of consent (the `VoiceConsent` component captures it client-side — needs a POST to save it)
 - [ ] Implement a "withdraw consent" mechanism (e.g. end-session deletes audio immediately)
+- [ ] Wire the consent gate into the real session start flow (before `/api/session/turn` first call)
 
 ### Environment variables
 
@@ -47,15 +48,35 @@ All keys listed in `.env.example` must be populated in your hosting environment:
 
 - [ ] `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` / `CLERK_WEBHOOK_SECRET`
 - [ ] `MONGODB_URI`
-- [ ] `OPENAI_API_KEY` / `LLM_PROVIDER`
+- [ ] `OPENAI_API_KEY` (used by both LLM and TTS adapters)
+- [ ] `LLM_PROVIDER` (default: `openai`)
 - [ ] `DEEPGRAM_API_KEY`
-- [ ] `ELEVENLABS_API_KEY`
+- [ ] `ELEVENLABS_API_KEY` (only needed once Premium tier flips to ElevenLabs)
 - [ ] `LEMONSQUEEZY_API_KEY` / `LEMONSQUEEZY_WEBHOOK_SECRET` / `LEMONSQUEEZY_STORE_ID`
+- [ ] `LEMONSQUEEZY_VARIANT_STARTER` / `LEMONSQUEEZY_VARIANT_PRO` / `LEMONSQUEEZY_VARIANT_PREMIUM`
 - [ ] `AWS_REGION` / `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `S3_AUDIO_BUCKET`
+- [ ] `USE_MOCKS=false` (must be explicitly false in production)
+
+### Webhook endpoints to register
+
+- [ ] Register the Clerk webhook URL: `https://<domain>/api/webhooks/clerk` — events: `user.created`, `user.updated`, `user.deleted`
+- [ ] Register the Lemon Squeezy webhook URL: `https://<domain>/api/webhooks/lemonsqueezy` — events: `subscription_created`, `subscription_updated`, `subscription_cancelled`, `subscription_expired`
 
 ---
 
 ## Important (before public launch / marketing)
+
+### End-to-end integration testing
+
+The full backend is implemented (all 19 tasks, 235 unit tests pass). Before launch, manually verify the following real-API flows:
+
+- [ ] Paste a real JD → LLM extracts signals correctly (not just mock data)
+- [ ] Full voice interview loop: mic → Deepgram STT → orchestrator → TTS playback → feedback report
+- [ ] Deepgram token minting works with a real API key (WebSocket connects)
+- [ ] TTS audio plays in the browser (OpenAI adapter produces valid opus/mp3)
+- [ ] Feedback report scores are reasonable (not all 50s or all 100s)
+- [ ] Lemon Squeezy test-mode checkout → webhook → tier sync → session cap enforcement
+- [ ] CDK deploy: S3 bucket accessible, audio upload/retrieval works (if audio persistence is enabled)
 
 ### Footer placeholder links
 
@@ -69,17 +90,32 @@ These footer links currently point to `#` (non-functional):
 
 ### Auth routes
 
-- [ ] Header / pricing CTAs link to `/sign-in` and `/sign-up` — these will 404 until Clerk integration (Task 3 in PLAN.md) is complete
+- [x] Header / pricing CTAs link to `/sign-in` and `/sign-up` — Clerk integration is complete (Task 3). Verify routes work on production domain with correct Clerk environment keys.
 
 ### Payment processor
 
-- [ ] Pricing "Go Pro" and "Start free" buttons link to `/sign-up` — need to wire Lemon Squeezy checkout overlay / link once Task 19 is complete
+- [x] Lemon Squeezy integration is complete (Task 19) — webhook verification, subscription sync, session-cap gating all wired.
+- [ ] Create three subscription products in Lemon Squeezy dashboard (Starter/Pro/Premium) and populate `LEMONSQUEEZY_VARIANT_*` env vars with the variant IDs
+- [ ] Wire checkout overlay / links on the pricing page — pass `checkout[custom][clerk_user_id]` to map subscription back to user
+- [ ] Test full checkout → webhook → tier sync flow in Lemon Squeezy test mode
 - [ ] Confirm the no-refunds language aligns with Lemon Squeezy's merchant-of-record terms (they handle disputes)
 
 ### OG image verification
 
 - [ ] Deploy and test the generated OG image at `/opengraph-image` using a social-card validator (Twitter Card Validator, Facebook Sharing Debugger, LinkedIn Post Inspector)
 - [ ] If the default sans-serif rendering looks too generic, consider bundling a `.woff2` font for `next/og`
+
+### Frontend wiring (mock → real)
+
+The UI screens were built on mock data (Phase 2). They need to be wired to the real API endpoints:
+
+- [ ] JD input → calls `POST /api/jd/parse` instead of returning mock fixture
+- [ ] Setup review → make parsed signals editable (user confirms/tweaks LLM output before starting)
+- [ ] Mic check → calls `POST /api/deepgram/token` for WebSocket credentials
+- [ ] Session screen → real Deepgram WebSocket for STT, `POST /api/session/turn` for orchestrator, `POST /api/session/tts` for audio playback
+- [ ] Feedback screen → calls `POST /api/session/feedback` for real report
+- [ ] Dashboard → calls the real `getDashboard` endpoint (needs a GET route or client-side fetch)
+- [ ] Show tier + remaining sessions in dashboard (from `billingService.canCreateSession`)
 
 ### Hero image alt text
 
@@ -121,6 +157,22 @@ These footer links currently point to `#` (non-functional):
 | File | Contains |
 |------|----------|
 | `lib/site.ts` | `SITE` (domain, name, twitter) and `LEGAL` (entity, jurisdiction, emails, dates) constants |
+| `lib/config/tiers.ts` | Subscription tier definitions (price, session cap, TTS provider per tier) |
+| `lib/services/billingService.ts` | Session gating (`canCreateSession`), webhook handling, TTS provider resolution |
+| `lib/services/jdService.ts` | JD parsing via LLM + session persistence |
+| `lib/services/sessionService.ts` | Interview orchestrator (turn loop, probe/advance/rescue/end) |
+| `lib/services/feedbackService.ts` | Background scoring + report generation |
+| `lib/integrations/deepgram.ts` | Scoped token minting for browser STT |
+| `lib/integrations/tts/` | Provider-agnostic TTS (OpenAI + ElevenLabs adapters) |
+| `lib/integrations/lemonsqueezy.ts` | Webhook HMAC verification + event parsing |
+| `lib/llm/` | Provider-agnostic LLM layer (OpenAI adapter, mock adapter, factory) |
+| `app/api/jd/parse/route.ts` | JD parsing endpoint |
+| `app/api/session/turn/route.ts` | Interview turn endpoint (SSE streaming) |
+| `app/api/session/tts/route.ts` | TTS audio streaming endpoint |
+| `app/api/session/feedback/route.ts` | Feedback report generation endpoint |
+| `app/api/deepgram/token/route.ts` | Scoped Deepgram token endpoint |
+| `app/api/webhooks/clerk/route.ts` | Clerk user sync webhook |
+| `app/api/webhooks/lemonsqueezy/route.ts` | Lemon Squeezy subscription webhook |
 | `app/layout.tsx` | Root metadata (title, OG, robots, keywords) |
 | `app/terms/page.tsx` | Terms of Service content |
 | `app/privacy/page.tsx` | Privacy Policy content |
