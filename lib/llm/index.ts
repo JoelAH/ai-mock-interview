@@ -1,3 +1,5 @@
+import 'server-only';
+
 /**
  * LLM Layer — provider-agnostic entry point.
  *

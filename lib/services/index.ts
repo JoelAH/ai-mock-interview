@@ -1,3 +1,5 @@
+import 'server-only';
+
 export { authService } from './authService';
 export { jdService, type IJdService } from './jdService';
 export { sessionService, type ISessionService } from './sessionService';
