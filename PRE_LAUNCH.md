@@ -152,6 +152,64 @@ The UI screens were built on mock data (Phase 2). They need to be wired to the r
 
 ---
 
+## Post-v1 Roadmap
+
+Features and improvements planned after the initial launch. These are not blockers — v1 ships without them.
+
+### Audio playback (listen back to your answers)
+
+- [ ] Implement `uploadAudio` in `lib/integrations/storage.ts` (S3 PutObject via AWS SDK v3)
+- [ ] Tee TTS audio in the session route — stream to client AND buffer → S3
+- [ ] Store the S3 key on the `interviewQuestions` doc
+- [ ] Add `GET /api/session/audio/[questionId]` route (returns pre-signed S3 URL, 15min expiry)
+- [ ] Add play button per question on the feedback report screen
+- [ ] Respect `VoiceConsent.retainAudio` — skip upload if user declined retention
+- [ ] Set S3 lifecycle policy (auto-delete after 90 days, or on consent withdrawal)
+
+### ElevenLabs premium voice
+
+- [ ] Flip `tierConfigs.premium.ttsProvider` from `'openai'` to `'elevenlabs'` in `lib/config/tiers.ts`
+- [ ] Validate latency and quality with real users before committing
+- [ ] A/B test conversion impact of premium voice vs OpenAI
+
+### "Practice this gap again" focused sessions
+
+- [ ] When user clicks "practice this gap" CTA on the feedback screen, seed a new session weighted toward the weak area (pass weak `focusAreas` into the orchestrator system prompt)
+- [ ] Add a `focusOverride` field to the session model so the orchestrator prioritizes those topics
+
+### Mobile / multi-client support
+
+- [ ] React Native app consuming the same REST/SSE endpoints with bearer-token auth
+- [ ] Document the streaming protocol (SSE format for turns, chunked binary for TTS) for third-party clients
+- [ ] Consider extracting to a standalone API server if Next.js serverless cold starts become a latency issue
+
+### Team / enterprise features
+
+- [ ] Multi-seat accounts with shared session history
+- [ ] Manager dashboard (view team aggregate scores, coaching insights)
+- [ ] Custom question banks uploaded per org
+- [ ] DPA (Data Processing Agreement) for enterprise contracts
+
+### Interview type expansion
+
+- [ ] Technical coding interviews (live code editor + AI evaluation)
+- [ ] Case study / product interviews
+- [ ] Custom interview templates (user defines their own question flow)
+
+### Engagement / retention
+
+- [ ] Email reminders for users who haven't practiced in 7+ days
+- [ ] Weekly progress digest (score trend, suggested focus)
+- [ ] Streak / gamification (optional, low priority)
+
+### Infrastructure
+
+- [ ] Promote JD parsing or feedback generation to Lambda if latency or timeout becomes an issue (extraction is trivial — services have no framework coupling)
+- [ ] Add CloudWatch alarms on the CDK prod stack (error rate, latency P99)
+- [ ] Implement rate limiting on token-minting and session-creation routes
+
+---
+
 ## File reference
 
 | File | Contains |
