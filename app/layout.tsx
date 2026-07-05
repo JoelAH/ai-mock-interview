@@ -69,7 +69,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${display.variable} ${sans.variable} ${mono.variable}`}>
       <body>
         <ClerkProvider>
           <a href="#main" className="skip-link">

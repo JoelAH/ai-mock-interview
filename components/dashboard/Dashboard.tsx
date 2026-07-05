@@ -1,11 +1,15 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useClerk } from '@clerk/nextjs';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import AddIcon from '@mui/icons-material/Add';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { mockDashboardResponse } from '@/lib/mock';
 import type { SessionSummary } from '@/lib/schemas';
 import { ScoreTrendChart } from './ScoreTrendChart';
@@ -39,6 +43,7 @@ interface DashboardProps {
 
 export default function Dashboard({ userName }: DashboardProps) {
   const router = useRouter();
+  const { signOut } = useClerk();
   const data = mockDashboardResponse;
   const { sessions, totalSessions, averageScore } = data;
 
@@ -57,13 +62,25 @@ export default function Dashboard({ userName }: DashboardProps) {
                 : 'No sessions yet — start your first mock interview!'}
             </Typography>
           </Box>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => router.push('/interview/new')}
-          >
-            New interview
-          </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => router.push('/interview/new')}
+            >
+              New interview
+            </Button>
+            <Tooltip title="Sign out">
+              <IconButton
+                onClick={() => signOut({ redirectUrl: '/' })}
+                aria-label="Sign out"
+                size="small"
+                sx={{ color: 'text.secondary' }}
+              >
+                <LogoutIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
         </Box>
 
         {/* Stats + Trend */}

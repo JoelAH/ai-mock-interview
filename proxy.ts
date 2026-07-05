@@ -11,9 +11,9 @@ const isPublicRoute = createRouteMatcher([
   '/mic-check',
 ]);
 
-export const proxy = clerkMiddleware((auth, request) => {
+export const proxy = clerkMiddleware(async (auth, request) => {
   if (!isPublicRoute(request)) {
-    auth.protect();
+    await auth.protect();
   }
 });
 
