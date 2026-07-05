@@ -60,7 +60,6 @@ export async function POST(request: Request) {
 
   // Route by event type
   const { type, data } = event;
-
   switch (type) {
     case 'user.created':
     case 'user.updated': {

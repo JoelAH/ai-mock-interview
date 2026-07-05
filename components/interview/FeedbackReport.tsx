@@ -11,7 +11,7 @@ import IconButton from '@mui/material/IconButton';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ReplayIcon from '@mui/icons-material/Replay';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import { mockFeedbackReportResponse } from '@/lib/mock';
+import type { FeedbackReportResponse } from '@/lib/schemas';
 import styles from './feedback.module.scss';
 
 /** Map a 0–100 score to a color tier */
@@ -30,10 +30,37 @@ function scoreDiagnosis(score: number): string {
   return 'Needs work — review the breakdown and practice the flagged areas.';
 }
 
-export default function FeedbackReport() {
+export default function FeedbackReport({
+  report,
+}: {
+  report: FeedbackReportResponse | null;
+}) {
   const router = useRouter();
-  const report = mockFeedbackReportResponse;
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+
+  if (!report) {
+    return (
+      <Box className={styles.page}>
+        <Box className={styles.container}>
+          <Typography variant="h5" sx={{ textAlign: 'center', mt: 4 }}>
+            No feedback available
+          </Typography>
+          <Typography color="text.secondary" sx={{ textAlign: 'center', mt: 1 }}>
+            Complete an interview session to see your feedback report.
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+            <Button
+              variant="outlined"
+              startIcon={<DashboardIcon />}
+              onClick={() => router.push('/dashboard')}
+            >
+              Back to dashboard
+            </Button>
+          </Box>
+        </Box>
+      </Box>
+    );
+  }
 
   const toggleQuestion = (index: number) => {
     setExpandedIndex(expandedIndex === index ? null : index);

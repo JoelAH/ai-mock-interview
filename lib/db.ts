@@ -40,6 +40,7 @@ export async function dbConnect(): Promise<typeof mongoose> {
   if (!cached.promise) {
     cached.promise = mongoose.connect(uri, {
       bufferCommands: false,
+      dbName: 'mockint',
     });
   }
 

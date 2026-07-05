@@ -10,8 +10,7 @@ import AddIcon from '@mui/icons-material/Add';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { mockDashboardResponse } from '@/lib/mock';
-import type { SessionSummary } from '@/lib/schemas';
+import type { DashboardResponse, SessionSummary } from '@/lib/schemas';
 import { ScoreTrendChart } from './ScoreTrendChart';
 import styles from './dashboard.module.scss';
 
@@ -39,13 +38,16 @@ function scoreColor(score: number | null): string {
 interface DashboardProps {
   /** Optional user name for greeting */
   userName?: string;
+  /** Dashboard data fetched server-side (null if user not resolved) */
+  data?: DashboardResponse | null;
 }
 
-export default function Dashboard({ userName }: DashboardProps) {
+export default function Dashboard({ userName, data }: DashboardProps) {
   const router = useRouter();
   const { signOut } = useClerk();
-  const data = mockDashboardResponse;
-  const { sessions, totalSessions, averageScore } = data;
+  const sessions = data?.sessions ?? [];
+  const totalSessions = data?.totalSessions ?? 0;
+  const averageScore = data?.averageScore ?? null;
 
   return (
     <Box className={styles.page}>
@@ -142,13 +144,13 @@ function SessionRow({ session }: { session: SessionSummary }) {
   return (
     <Box
       className={styles.sessionRow}
-      onClick={() => router.push('/interview/feedback')}
+      onClick={() => router.push(`/interview/feedback?sessionId=${session.sessionId}`)}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          router.push('/interview/feedback');
+          router.push(`/interview/feedback?sessionId=${session.sessionId}`);
         }
       }}
       aria-label={`View session: ${session.parsedSignals?.role ?? 'Interview'}`}
