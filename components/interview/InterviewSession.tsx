@@ -119,7 +119,7 @@ export default function InterviewSession() {
             setPhase('done');
             return;
           } else if (chunk.type === 'done') {
-            setQuestionIndex(chunk.questionOrder + 1);
+            setQuestionIndex(chunk.questionOrder);
           }
         } catch {
           // Skip malformed chunks

@@ -152,6 +152,7 @@ export const mockSessionTurnResponse: SessionTurnResponse = {
 
 export const mockFeedbackReportResponse: FeedbackReportResponse = {
   sessionId: mockSessionId,
+  abandoned: false,
   overallScore: 76,
   technicalAccuracyScore: 82,
   communicationScore: 78,

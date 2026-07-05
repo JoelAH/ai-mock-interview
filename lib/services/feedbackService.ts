@@ -111,13 +111,39 @@ const realFeedbackService: IFeedbackService = {
       throw new Error(`No questions found for session ${sessionId}.`);
     }
 
-    // 2. Check if a report already exists (avoid duplicate key error on revisit)
+    // 2. Check session status — abandoned sessions are not scored
+    const session = await sessionRepository.findById(sessionId);
+    const isAbandoned = session?.status === 'abandoned';
+
+    if (isAbandoned) {
+      return {
+        sessionId,
+        abandoned: true,
+        overallScore: null,
+        technicalAccuracyScore: null,
+        communicationScore: null,
+        structureScore: null,
+        synthesizedInsight: null,
+        diagnosis: null,
+        questions: questions.map((q) => ({
+          text: q.text,
+          type: q.type as 'behavioral' | 'architectural' | 'follow_up' | 'rescue',
+          order: q.order,
+          isFollowUp: q.isFollowUp ?? false,
+          answerTranscript: q.answerTranscript ?? '',
+          scores: q.scores ?? null,
+          strongAnswerNotes: q.strongAnswerNotes ?? '',
+        })),
+      };
+    }
+
+    // 3. Check if a report already exists (avoid duplicate key error on revisit)
     const existing = await feedbackRepository.findBySessionId(sessionId);
 
     if (existing) {
-      // Return the previously generated report with per-question breakdown
       return {
         sessionId,
+        abandoned: false,
         overallScore: existing.overallScore,
         technicalAccuracyScore: existing.technicalAccuracyScore,
         communicationScore: existing.communicationScore,
@@ -136,7 +162,7 @@ const realFeedbackService: IFeedbackService = {
       };
     }
 
-    // 3. Build the full transcript for the LLM
+    // 4. Build the full transcript for the LLM
     const transcriptLines = questions.map((q, i) => {
       const answer = q.answerTranscript || '(no answer recorded)';
       return `Q${i + 1} [${q.type}]: ${q.text}\nA${i + 1}: ${answer}`;
@@ -144,7 +170,7 @@ const realFeedbackService: IFeedbackService = {
 
     const fullTranscript = transcriptLines.join('\n\n');
 
-    // 4. Call LLM for the holistic report
+    // 5. Call LLM for the holistic report
     const result = await llm.generateStructuredOutput({
       messages: [
         { role: 'system', content: REPORT_GENERATION_PROMPT },
@@ -158,7 +184,7 @@ const realFeedbackService: IFeedbackService = {
       temperature: 0.3,
     });
 
-    // 5. Persist feedback report
+    // 6. Persist feedback report
     await feedbackRepository.create({
       sessionId,
       overallScore: result.overallScore,
@@ -168,12 +194,13 @@ const realFeedbackService: IFeedbackService = {
       synthesizedInsight: result.synthesizedInsight,
     });
 
-    // 6. Update session's overall score
+    // 7. Update session's overall score
     await sessionRepository.setOverallScore(sessionId, result.overallScore);
 
-    // 7. Build and return the full response (includes per-question breakdown)
+    // 8. Build and return the full response (includes per-question breakdown)
     return {
       sessionId,
+      abandoned: false,
       overallScore: result.overallScore,
       technicalAccuracyScore: result.technicalAccuracyScore,
       communicationScore: result.communicationScore,
@@ -205,8 +232,10 @@ const realFeedbackService: IFeedbackService = {
       parsedSignals: s.parsedSignals ?? null,
     }));
 
-    // Calculate average score from completed sessions
-    const scoredSessions = sessionSummaries.filter((s) => s.overallScore !== null);
+    // Calculate average score from completed sessions (exclude abandoned)
+    const scoredSessions = sessionSummaries.filter(
+      (s) => s.overallScore !== null && s.status !== 'abandoned',
+    );
     const averageScore =
       scoredSessions.length > 0
         ? Math.round(

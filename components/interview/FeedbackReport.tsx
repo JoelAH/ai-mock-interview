@@ -9,6 +9,7 @@ import Chip from '@mui/material/Chip';
 import Collapse from '@mui/material/Collapse';
 import IconButton from '@mui/material/IconButton';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ReplayIcon from '@mui/icons-material/Replay';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import type { FeedbackReportResponse } from '@/lib/schemas';
@@ -62,6 +63,45 @@ export default function FeedbackReport({
     );
   }
 
+  if (report.abandoned) {
+    return (
+      <Box className={styles.page}>
+        <Box className={styles.container}>
+          <Box className={styles.abandonedBanner} role="alert">
+            <WarningAmberIcon className={styles.abandonedIcon} />
+            <Box>
+              <Typography variant="h6" className={styles.abandonedTitle}>
+                Interview abandoned
+              </Typography>
+              <Typography className={styles.abandonedText}>
+                This session was ended early and was not scored. Start a new interview to get a full feedback report.
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* CTAs */}
+          <Box className={styles.actions}>
+            <Button
+              variant="contained"
+              startIcon={<ReplayIcon />}
+              onClick={() => router.push('/interview/new')}
+              className={styles.practiceBtn}
+            >
+              Start a new interview
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<DashboardIcon />}
+              onClick={() => router.push('/dashboard')}
+            >
+              Back to dashboard
+            </Button>
+          </Box>
+        </Box>
+      </Box>
+    );
+  }
+
   const toggleQuestion = (index: number) => {
     setExpandedIndex(expandedIndex === index ? null : index);
   };
@@ -71,7 +111,7 @@ export default function FeedbackReport({
       <Box className={styles.container}>
         {/* Overall score */}
         <Box className={styles.scoreHero}>
-          <Box className={`${styles.scoreCircle} ${styles[scoreColor(report.overallScore)]}`}>
+          <Box className={`${styles.scoreCircle} ${styles[scoreColor(report.overallScore!)]}`}>
             <Typography variant="h2" className={styles.scoreValue}>
               {report.overallScore}
             </Typography>
@@ -80,26 +120,28 @@ export default function FeedbackReport({
             </Typography>
           </Box>
           <Typography className={styles.diagnosis}>
-            {scoreDiagnosis(report.overallScore)}
+            {scoreDiagnosis(report.overallScore!)}
           </Typography>
         </Box>
 
         {/* Sub-scores */}
         <Box className={styles.subScores} aria-label="Sub-scores">
-          <SubScore label="Technical Accuracy" score={report.technicalAccuracyScore} />
-          <SubScore label="Communication" score={report.communicationScore} />
-          <SubScore label="Structure" score={report.structureScore} />
+          <SubScore label="Technical Accuracy" score={report.technicalAccuracyScore!} />
+          <SubScore label="Communication" score={report.communicationScore!} />
+          <SubScore label="Structure" score={report.structureScore!} />
         </Box>
 
         {/* Synthesized insight */}
-        <Box className={styles.insightCard}>
-          <Typography variant="subtitle2" className={styles.insightLabel}>
-            Focus on this next time
-          </Typography>
-          <Typography className={styles.insightText}>
-            {report.synthesizedInsight}
-          </Typography>
-        </Box>
+        {report.synthesizedInsight && (
+          <Box className={styles.insightCard}>
+            <Typography variant="subtitle2" className={styles.insightLabel}>
+              Focus on this next time
+            </Typography>
+            <Typography className={styles.insightText}>
+              {report.synthesizedInsight}
+            </Typography>
+          </Box>
+        )}
 
         {/* Per-question breakdown */}
         <Box className={styles.questionsSection}>
