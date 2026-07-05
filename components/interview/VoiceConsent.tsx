@@ -7,8 +7,6 @@ import { LEGAL, SITE } from '@/lib/site';
 import styles from './interview.module.scss';
 
 export type ConsentResult = {
-  /** Whether the user opted in to keeping raw audio after transcription. */
-  retainAudio: boolean;
   /** Wording version the user agreed to (see LEGAL.consentVersion). */
   version: string;
   /** ISO timestamp the consent was given. */
@@ -27,14 +25,11 @@ const STORAGE_KEY = 'sinterview.voiceConsent';
  */
 export function VoiceConsent({ onConsent }: { onConsent: (result: ConsentResult) => void }) {
   const [agree, setAgree] = useState(false);
-  const [retain, setRetain] = useState(false);
   const agreeId = useId();
-  const retainId = useId();
 
   function handleContinue() {
     if (!agree) return;
     const result: ConsentResult = {
-      retainAudio: retain,
       version: LEGAL.consentVersion,
       at: new Date().toISOString(),
     };
@@ -109,26 +104,6 @@ export function VoiceConsent({ onConsent }: { onConsent: (result: ConsentResult)
             processing it and its transcript with third-party providers to deliver and score my mock
             interview.
             <span className={styles.required}>Required</span>
-          </span>
-        </label>
-
-        <label
-          className={`${styles.consent}${retain ? ` ${styles.consentChecked}` : ''}`}
-          htmlFor={retainId}
-        >
-          <input
-            id={retainId}
-            type="checkbox"
-            className={styles.checkbox}
-            checked={retain}
-            onChange={(e) => setRetain(e.target.checked)}
-          />
-          <span className={styles.consentBody}>
-            Also save my audio after the session so I can play it back.
-            <span className={styles.optional}>Optional</span>
-            <span className={styles.consentSub}>
-              Leave this unchecked and we delete the raw audio once it has been transcribed.
-            </span>
           </span>
         </label>
       </div>

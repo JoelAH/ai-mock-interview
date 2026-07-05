@@ -10,6 +10,7 @@ import Chip from '@mui/material/Chip';
 import MicIcon from '@mui/icons-material/Mic';
 import StopIcon from '@mui/icons-material/Stop';
 import DoneIcon from '@mui/icons-material/Done';
+import CloseIcon from '@mui/icons-material/Close';
 import { mockQuestions } from '@/lib/mock';
 import styles from './session.module.scss';
 
@@ -91,14 +92,32 @@ export default function InterviewSession() {
     router.push('/interview/feedback');
   };
 
+  const handleEndInterview = () => {
+    // TODO: When wired to real backend, call API to mark session as 'abandoned'
+    // and count it toward usage. For now, redirect to dashboard.
+    router.push('/dashboard');
+  };
+
   return (
     <Box className={styles.page}>
       <Box className={styles.container}>
         {/* Progress header */}
-        <Box className={styles.header}>
+        <Box className={styles.header} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="body2" color="text.secondary">
             Question {Math.min(questionIndex + 1, totalQuestions)} of {totalQuestions}
           </Typography>
+          {phase !== 'done' && (
+            <Button
+              variant="text"
+              size="small"
+              startIcon={<CloseIcon />}
+              onClick={handleEndInterview}
+              sx={{ color: 'text.secondary' }}
+              aria-label="End interview early"
+            >
+              End interview
+            </Button>
+          )}
           <LinearProgress
             variant="determinate"
             value={progress}

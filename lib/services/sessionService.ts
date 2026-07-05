@@ -41,6 +41,12 @@ export interface ISessionService {
    * Ends a session — transitions to completed.
    */
   end(userId: string, sessionId: string): Promise<void>;
+
+  /**
+   * Abandons a session early — transitions to abandoned.
+   * Still counts toward the user's monthly usage.
+   */
+  abandon(userId: string, sessionId: string): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -300,6 +306,10 @@ const realSessionService: ISessionService = {
   async end(userId: string, sessionId: string): Promise<void> {
     await sessionRepository.updateStatus(sessionId, 'completed');
   },
+
+  async abandon(userId: string, sessionId: string): Promise<void> {
+    await sessionRepository.updateStatus(sessionId, 'abandoned');
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -371,6 +381,10 @@ const mockSessionService: ISessionService = {
   async end(_userId: string, sessionId: string): Promise<void> {
     turnIndexes.delete(sessionId);
   },
+
+  async abandon(_userId: string, sessionId: string): Promise<void> {
+    turnIndexes.delete(sessionId);
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -392,5 +406,8 @@ export const sessionService: ISessionService = {
   },
   end(...args) {
     return isMockMode() ? mockSessionService.end(...args) : realSessionService.end(...args);
+  },
+  abandon(...args) {
+    return isMockMode() ? mockSessionService.abandon(...args) : realSessionService.abandon(...args);
   },
 };

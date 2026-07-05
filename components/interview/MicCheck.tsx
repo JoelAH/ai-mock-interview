@@ -59,9 +59,7 @@ export function MicCheck() {
           </div>
 
           <p className={styles.fine}>
-            {consent.retainAudio
-              ? 'Your audio will be saved so you can play it back after the session.'
-              : 'Raw audio will be deleted once transcribed — only the transcript is kept.'}
+            Raw audio will be deleted once transcribed — only the transcript is kept.
           </p>
         </div>
       ) : (

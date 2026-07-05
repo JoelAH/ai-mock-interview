@@ -38,7 +38,7 @@ have** can follow in the first few weeks.
 
 ### Voice-recording consent — server persistence
 
-- [ ] Persist the `ConsentResult` (`{ retainAudio, version, at }`) server-side against the user record as durable proof of consent (the `VoiceConsent` component captures it client-side — needs a POST to save it)
+- [ ] Persist the `ConsentResult` (`{ version, at }`) server-side against the user record as durable proof of consent (the `VoiceConsent` component captures it client-side — needs a POST to save it)
 - [ ] Implement a "withdraw consent" mechanism (e.g. end-session deletes audio immediately)
 - [ ] Wire the consent gate into the real session start flow (before `/api/session/turn` first call)
 
@@ -157,12 +157,13 @@ Features and improvements planned after the initial launch. These are not blocke
 
 ### Audio playback (listen back to your answers)
 
+- [ ] Add optional audio-retention consent checkbox back to `VoiceConsent.tsx` (re-add `retainAudio` field to `ConsentResult`)
 - [ ] Implement `uploadAudio` in `lib/integrations/storage.ts` (S3 PutObject via AWS SDK v3)
 - [ ] Tee TTS audio in the session route — stream to client AND buffer → S3
 - [ ] Store the S3 key on the `interviewQuestions` doc
 - [ ] Add `GET /api/session/audio/[questionId]` route (returns pre-signed S3 URL, 15min expiry)
 - [ ] Add play button per question on the feedback report screen
-- [ ] Respect `VoiceConsent.retainAudio` — skip upload if user declined retention
+- [ ] Skip upload if user declined audio retention
 - [ ] Set S3 lifecycle policy (auto-delete after 90 days, or on consent withdrawal)
 
 ### ElevenLabs premium voice
