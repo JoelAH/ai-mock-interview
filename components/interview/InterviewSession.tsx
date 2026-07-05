@@ -11,6 +11,8 @@ import MicIcon from '@mui/icons-material/Mic';
 import StopIcon from '@mui/icons-material/Stop';
 import DoneIcon from '@mui/icons-material/Done';
 import CloseIcon from '@mui/icons-material/Close';
+import { useTTS } from '@/hooks/useTTS';
+import { useSTT } from '@/hooks/useSTT';
 import styles from './session.module.scss';
 
 /**
@@ -23,8 +25,8 @@ import styles from './session.module.scss';
  */
 type TurnPhase = 'loading' | 'asking' | 'listening' | 'thinking' | 'done';
 
-/** Simulated delay for the "asking" phase while TTS plays (fallback) */
-const ASKING_DELAY = 2000;
+/** Fallback timeout if TTS fails — ensures the interview can still proceed */
+const TTS_FALLBACK_TIMEOUT = 15000;
 
 interface CurrentQuestion {
   text: string;
@@ -43,8 +45,43 @@ export default function InterviewSession() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const transcriptRef = useRef('');
+  const phaseRef = useRef<TurnPhase>('loading');
+
+  // Keep phaseRef in sync for use inside callbacks
+  phaseRef.current = phase;
 
   const progress = ((questionIndex + (phase === 'done' ? 1 : 0)) / totalQuestions) * 100;
+
+  // ---- TTS hook: plays the question audio during "asking" phase ----
+  const { speak, stop: stopTTS } = useTTS({
+    onDone: () => {
+      // Only transition if we're still in the asking phase
+      if (phaseRef.current === 'asking') {
+        setPhase('listening');
+        setTranscript('');
+        transcriptRef.current = '';
+        sttRef.current?.start();
+      }
+    },
+    onError: (err) => {
+      console.error('[InterviewSession] TTS error:', err);
+    },
+  });
+
+  // ---- STT hook: captures speech during "listening" phase ----
+  const { start: startSTT, stop: stopSTT, getTranscript } = useSTT({
+    onTranscript: (text) => {
+      setTranscript(text);
+      transcriptRef.current = text;
+    },
+    onError: (err) => {
+      console.error('[InterviewSession] STT error:', err);
+    },
+  });
+
+  // Store STT methods in a ref so TTS onDone can call start
+  const sttRef = useRef({ start: startSTT, stop: stopSTT, getTranscript });
+  sttRef.current = { start: startSTT, stop: stopSTT, getTranscript };
 
   // Load sessionId from sessionStorage on mount
   useEffect(() => {
@@ -128,24 +165,36 @@ export default function InterviewSession() {
     }
   };
 
-  // Simulate "asking" phase — auto-transition to listening after delay
-  // In full implementation, this would wait for TTS playback to finish
+  // Play question audio via TTS when entering "asking" phase
   useEffect(() => {
-    if (phase !== 'asking') return;
+    if (phase !== 'asking' || !currentQuestion) return;
 
-    const timer = setTimeout(() => {
-      setPhase('listening');
-      setTranscript('');
-      transcriptRef.current = '';
-    }, ASKING_DELAY);
+    speak(currentQuestion.text);
 
-    return () => clearTimeout(timer);
+    // Fallback: if TTS takes too long, force transition
+    const fallback = setTimeout(() => {
+      if (phaseRef.current === 'asking') {
+        console.warn('[InterviewSession] TTS fallback timeout — moving to listening');
+        stopTTS();
+        setPhase('listening');
+        setTranscript('');
+        transcriptRef.current = '';
+        sttRef.current.start();
+      }
+    }, TTS_FALLBACK_TIMEOUT);
+
+    return () => {
+      clearTimeout(fallback);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, currentQuestion]);
 
   // Handle user finishing their answer
   const handleDoneAnswering = useCallback(async () => {
     if (!sessionId) return;
 
+    // Stop STT and capture final transcript
+    sttRef.current.stop();
     const userTranscript = transcriptRef.current || transcript || '(no response)';
     setPhase('thinking');
 
@@ -173,6 +222,10 @@ export default function InterviewSession() {
   };
 
   const handleEndInterview = async () => {
+    // Stop any active audio
+    stopTTS();
+    sttRef.current.stop();
+
     // Mark session as abandoned via API, then redirect to dashboard
     if (sessionId) {
       try {
@@ -186,12 +239,6 @@ export default function InterviewSession() {
       }
     }
     router.push('/dashboard');
-  };
-
-  // Handle transcript updates from STT (or manual typing for now)
-  const handleTranscriptChange = (text: string) => {
-    setTranscript(text);
-    transcriptRef.current = text;
   };
 
   if (error) {
