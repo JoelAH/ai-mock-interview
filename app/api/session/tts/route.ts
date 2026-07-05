@@ -67,7 +67,7 @@ export async function POST(request: Request) {
   const audioStream = ttsAdapter.streamTextToSpeech(textStream());
 
   // Determine content type based on provider
-  const contentType = ttsProviderName === 'elevenlabs' ? 'audio/mpeg' : 'audio/opus';
+  const contentType = ttsProviderName === 'openai' ? 'audio/opus' : 'audio/mpeg';
 
   const encoder = { encode: (chunk: Uint8Array) => chunk };
   const stream = new ReadableStream({

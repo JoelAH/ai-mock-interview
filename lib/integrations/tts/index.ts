@@ -14,6 +14,7 @@ import type { TtsProvider } from '@/lib/config/tiers';
 import { mockTtsAdapter } from './mock-adapter';
 import { openaiTtsAdapter } from './openai-adapter';
 import { elevenlabsTtsAdapter } from './elevenlabs-adapter';
+import { deepgramTtsAdapter } from './deepgram-adapter';
 import type { TtsAdapter } from './types';
 
 export type { TtsAdapter, TtsOptions } from './types';
@@ -29,13 +30,15 @@ export function getTtsProvider(provider: TtsProvider): TtsAdapter {
   }
 
   switch (provider) {
+    case 'deepgram':
+      return deepgramTtsAdapter;
     case 'openai':
       return openaiTtsAdapter;
     case 'elevenlabs':
       return elevenlabsTtsAdapter;
     default:
       throw new Error(
-        `Unknown TTS provider: "${provider}". Supported: openai, elevenlabs. ` +
+        `Unknown TTS provider: "${provider}". Supported: deepgram, openai, elevenlabs. ` +
           `Or set USE_MOCKS=true for development.`,
       );
   }

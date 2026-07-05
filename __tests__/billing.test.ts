@@ -265,25 +265,25 @@ describe('billingService.canCreateSession', () => {
 // Tier config resolves correct TTS provider
 // ---------------------------------------------------------------------------
 describe('Tier config TTS provider resolution', () => {
-  it('free tier uses openai', () => {
-    expect(getTtsProviderForTier('free')).toBe('openai');
+  it('free tier uses deepgram', () => {
+    expect(getTtsProviderForTier('free')).toBe('deepgram');
   });
 
-  it('starter tier uses openai', () => {
-    expect(getTtsProviderForTier('starter')).toBe('openai');
+  it('starter tier uses deepgram', () => {
+    expect(getTtsProviderForTier('starter')).toBe('deepgram');
   });
 
-  it('pro tier uses openai', () => {
-    expect(getTtsProviderForTier('pro')).toBe('openai');
+  it('pro tier uses deepgram', () => {
+    expect(getTtsProviderForTier('pro')).toBe('deepgram');
   });
 
-  it('premium tier uses openai (MVP — flipped to elevenlabs later)', () => {
-    expect(getTtsProviderForTier('premium')).toBe('openai');
+  it('premium tier uses deepgram (MVP — flipped to elevenlabs later)', () => {
+    expect(getTtsProviderForTier('premium')).toBe('deepgram');
   });
 
-  it('null/undefined defaults to free (openai)', () => {
-    expect(getTtsProviderForTier(null)).toBe('openai');
-    expect(getTtsProviderForTier(undefined)).toBe('openai');
+  it('null/undefined defaults to free (deepgram)', () => {
+    expect(getTtsProviderForTier(null)).toBe('deepgram');
+    expect(getTtsProviderForTier(undefined)).toBe('deepgram');
   });
 });
 

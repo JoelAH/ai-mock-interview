@@ -12,6 +12,7 @@ import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from 'vite
 import { mockTtsAdapter } from '@/lib/integrations/tts/mock-adapter';
 import { openaiTtsAdapter, _setTtsClientForTesting } from '@/lib/integrations/tts/openai-adapter';
 import { elevenlabsTtsAdapter } from '@/lib/integrations/tts/elevenlabs-adapter';
+import { deepgramTtsAdapter } from '@/lib/integrations/tts/deepgram-adapter';
 import { getTtsProvider } from '@/lib/integrations/tts';
 
 // Mock Clerk for route handler tests
@@ -309,12 +310,132 @@ describe('ElevenLabs TTS adapter', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Deepgram TTS adapter (mocked fetch)
+// ---------------------------------------------------------------------------
+describe('Deepgram TTS adapter', () => {
+  const originalUseMocks = process.env.USE_MOCKS;
+  const originalDeepgramKey = process.env.DEEPGRAM_API_KEY;
+
+  beforeEach(() => {
+    process.env.USE_MOCKS = 'false';
+    process.env.DEEPGRAM_API_KEY = 'test-deepgram-key';
+  });
+
+  afterEach(() => {
+    process.env.USE_MOCKS = originalUseMocks;
+    process.env.DEEPGRAM_API_KEY = originalDeepgramKey;
+    vi.restoreAllMocks();
+  });
+
+  it('has provider set to "deepgram"', () => {
+    expect(deepgramTtsAdapter.provider).toBe('deepgram');
+  });
+
+  it('calls Deepgram /v1/speak endpoint and yields audio bytes', async () => {
+    const fakeAudioBytes = new Uint8Array([0xDD, 0xEE, 0xFF]);
+
+    const mockReadableStream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(fakeAudioBytes);
+        controller.close();
+      },
+    });
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(mockReadableStream, { status: 200 }),
+    );
+
+    const chunks = await collectChunks(
+      deepgramTtsAdapter.streamTextToSpeech(textFromString('Tell me about your experience.')),
+    );
+
+    // Verify fetch was called correctly
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining('api.deepgram.com/v1/speak'),
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          Authorization: 'Token test-deepgram-key',
+          'Content-Type': 'application/json',
+        }),
+      }),
+    );
+
+    // Verify URL contains the model
+    const calledUrl = fetchSpy.mock.calls[0][0] as string;
+    expect(calledUrl).toContain('model=aura-2-pluto-en');
+
+    // Verify body contains the text
+    const callArgs = fetchSpy.mock.calls[0][1];
+    const body = JSON.parse(callArgs!.body as string);
+    expect(body.text).toBe('Tell me about your experience.');
+
+    // Verify audio was yielded
+    expect(chunks).toHaveLength(1);
+    expect(chunks[0]).toEqual(fakeAudioBytes);
+  });
+
+  it('throws on non-200 response', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response('{"error":"unauthorized"}', { status: 401 }),
+    );
+
+    await expect(async () => {
+      await collectChunks(
+        deepgramTtsAdapter.streamTextToSpeech(textFromString('Hello')),
+      );
+    }).rejects.toThrow('Deepgram TTS failed (401)');
+  });
+
+  it('yields nothing for empty text', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    const chunks = await collectChunks(
+      deepgramTtsAdapter.streamTextToSpeech(textFromString('   ')),
+    );
+
+    expect(chunks).toHaveLength(0);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('uses custom model/voice when provided', async () => {
+    const mockReadableStream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array([0x00]));
+        controller.close();
+      },
+    });
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(mockReadableStream, { status: 200 }),
+    );
+
+    await collectChunks(
+      deepgramTtsAdapter.streamTextToSpeech(textFromString('Hi'), { voice: 'aura-2-luna-en' }),
+    );
+
+    const calledUrl = fetchSpy.mock.calls[0][0] as string;
+    expect(calledUrl).toContain('model=aura-2-luna-en');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // TTS Factory (getTtsProvider)
 // ---------------------------------------------------------------------------
 describe('getTtsProvider factory', () => {
   it('returns mock adapter when USE_MOCKS=true', () => {
-    const adapter = getTtsProvider('openai');
+    const adapter = getTtsProvider('deepgram');
     expect(adapter.provider).toBe('mock');
+  });
+
+  it('returns deepgram adapter when USE_MOCKS=false and provider is deepgram', () => {
+    const original = process.env.USE_MOCKS;
+    process.env.USE_MOCKS = 'false';
+
+    const adapter = getTtsProvider('deepgram');
+    expect(adapter.provider).toBe('deepgram');
+
+    process.env.USE_MOCKS = original;
   });
 
   it('returns openai adapter when USE_MOCKS=false and provider is openai', () => {
@@ -425,7 +546,8 @@ describe('POST /api/session/tts route handler', () => {
     const response = await POST(request);
     expect(response.status).toBe(200);
     // In mock mode, getTtsProvider returns mock adapter which yields silent buffers
-    expect(response.headers.get('Content-Type')).toBe('audio/opus');
+    // Default tier is 'starter' which uses 'deepgram' → audio/mpeg
+    expect(response.headers.get('Content-Type')).toBe('audio/mpeg');
 
     // Verify we got binary data back
     const buffer = await response.arrayBuffer();

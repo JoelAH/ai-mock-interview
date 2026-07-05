@@ -13,7 +13,7 @@
 export type SubscriptionTier = 'free' | 'starter' | 'pro' | 'premium';
 
 /** TTS providers the app can resolve to per tier. */
-export type TtsProvider = 'openai' | 'elevenlabs';
+export type TtsProvider = 'deepgram' | 'openai' | 'elevenlabs';
 
 export interface TierConfig {
   /** Tier identifier */
@@ -40,7 +40,7 @@ export const tierConfigs: Record<SubscriptionTier, TierConfig> = {
     label: 'Free Trial',
     priceUsd: 0,
     sessionsPerMonth: 1, // single trial session before a subscription is required
-    ttsProvider: 'openai',
+    ttsProvider: 'deepgram',
     lemonVariantId: null,
   },
   starter: {
@@ -48,7 +48,7 @@ export const tierConfigs: Record<SubscriptionTier, TierConfig> = {
     label: 'Starter',
     priceUsd: 19,
     sessionsPerMonth: 8,
-    ttsProvider: 'openai',
+    ttsProvider: 'deepgram',
     lemonVariantId: process.env.LEMONSQUEEZY_VARIANT_STARTER ?? null,
   },
   pro: {
@@ -56,7 +56,7 @@ export const tierConfigs: Record<SubscriptionTier, TierConfig> = {
     label: 'Pro',
     priceUsd: 39,
     sessionsPerMonth: 25,
-    ttsProvider: 'openai',
+    ttsProvider: 'deepgram',
     lemonVariantId: process.env.LEMONSQUEEZY_VARIANT_PRO ?? null,
   },
   premium: {
@@ -64,8 +64,8 @@ export const tierConfigs: Record<SubscriptionTier, TierConfig> = {
     label: 'Premium',
     priceUsd: 79,
     sessionsPerMonth: 30,
-    // MVP: OpenAI TTS. Change to 'elevenlabs' to enable the premium voice.
-    ttsProvider: 'openai',
+    // MVP: Deepgram TTS. Change to 'elevenlabs' to enable the premium voice.
+    ttsProvider: 'deepgram',
     lemonVariantId: process.env.LEMONSQUEEZY_VARIANT_PREMIUM ?? null,
   },
 };
