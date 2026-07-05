@@ -142,7 +142,7 @@ export function VoiceConsent({ onConsent }: { onConsent: (result: ConsentResult)
         >
           <MicIcon /> I agree — continue
         </button>
-        <Link href="/" className={styles.textBtn}>
+        <Link href="/dashboard" className={styles.textBtn}>
           Not now
         </Link>
       </div>
