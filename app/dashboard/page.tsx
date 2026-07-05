@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { currentUser } from '@clerk/nextjs/server';
 import { auth } from '@clerk/nextjs/server';
 import { Dashboard } from '@/components/dashboard';
-import { feedbackService } from '@/lib/services';
+import { feedbackService, billingService } from '@/lib/services';
 import { authService } from '@/lib/services';
 
 export const metadata: Metadata = {
@@ -16,10 +16,17 @@ export default async function DashboardPage() {
     auth(),
   ]);
 
-  // Resolve internal user and fetch dashboard data
+  // Resolve internal user and fetch dashboard + billing data
   let dashboardData = null;
+  let allowance = null;
   if (clerkUserId) {
-    const internalUser = await authService.resolveUser(clerkUserId);
+    const [internalUser, sessionAllowance] = await Promise.all([
+      authService.resolveUser(clerkUserId),
+      billingService.canCreateSession(clerkUserId),
+    ]);
+
+    allowance = sessionAllowance;
+
     if (internalUser) {
       dashboardData = await feedbackService.getDashboard(
         internalUser._id.toString(),
@@ -28,6 +35,10 @@ export default async function DashboardPage() {
   }
 
   return (
-    <Dashboard userName={user?.firstName ?? undefined} data={dashboardData} />
+    <Dashboard
+      userName={user?.firstName ?? undefined}
+      data={dashboardData}
+      allowance={allowance}
+    />
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
@@ -36,8 +36,12 @@ export default function SetupReview() {
   const [data, setData] = useState<JdParseResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasCalledRef = useRef(false);
 
   useEffect(() => {
+    if (hasCalledRef.current) return;
+    hasCalledRef.current = true;
+
     const parseJd = async () => {
       // Read the JD input stored by JdInput component
       const stored = sessionStorage.getItem('jd-input');
@@ -50,12 +54,25 @@ export default function SetupReview() {
       try {
         const payload = JSON.parse(stored);
 
+        // Build the JD text to send to the parser
+        let jdText = payload.jdText;
+
+        if (payload.sourceType === 'preset') {
+          // Build a synthetic JD with role-appropriate culture & focus areas
+          // so the LLM has meaningful context to extract from
+          jdText = buildPresetJdText(
+            payload.role ?? payload.jdText,
+            payload.level ?? 'Mid-level',
+            payload.tech ?? [],
+          );
+        }
+
         // Call the JD parse API (which respects USE_MOCKS internally)
         const response = await fetch('/api/jd/parse', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            jdText: payload.jdText,
+            jdText,
             sourceType: payload.sourceType,
           }),
         });
@@ -233,4 +250,58 @@ export default function SetupReview() {
       </Paper>
     </Box>
   );
+}
+
+// ---------------------------------------------------------------------------
+// Preset JD builder — generates a synthetic JD with role-appropriate
+// culture signals and focus areas so the LLM parser produces rich results.
+// ---------------------------------------------------------------------------
+
+/** Culture signals by seniority level */
+const CULTURE_BY_LEVEL: Record<string, string[]> = {
+  Junior: ['mentorship', 'growth-oriented', 'collaborative', 'learning culture'],
+  Intermediate: ['ownership', 'collaboration', 'continuous improvement', 'autonomy'],
+  Senior: ['ownership', 'technical leadership', 'mentoring', 'cross-team collaboration', 'high standards'],
+  Staff: ['technical vision', 'organizational influence', 'mentoring', 'strategic thinking', 'ownership'],
+};
+
+/** Focus areas by role */
+const FOCUS_BY_ROLE: Record<string, string[]> = {
+  'Frontend Engineer': ['UI/UX implementation', 'performance optimization', 'accessibility', 'component architecture'],
+  'Backend Engineer': ['API design', 'data modeling', 'scalability', 'reliability'],
+  'Full-Stack Engineer': ['end-to-end feature delivery', 'API design', 'frontend architecture', 'system integration'],
+  'Engineering Manager': ['team leadership', 'project delivery', 'hiring', 'technical strategy', 'stakeholder management'],
+  'DevOps / SRE': ['infrastructure automation', 'observability', 'incident response', 'CI/CD pipelines', 'reliability'],
+  'Platform Engineer': ['developer experience', 'infrastructure abstraction', 'scalability', 'service mesh', 'CI/CD'],
+  'QA Engineer': ['test strategy', 'automation frameworks', 'quality metrics', 'CI integration', 'regression testing'],
+};
+
+/** Senior+ levels get architecture and tradeoffs added to focus areas */
+const SENIOR_FOCUS_EXTRAS = ['architecture design', 'technical tradeoffs', 'system design'];
+
+function buildPresetJdText(role: string, level: string, tech: string[]): string {
+  const culture = CULTURE_BY_LEVEL[level] ?? CULTURE_BY_LEVEL['Intermediate'];
+  let focusAreas = FOCUS_BY_ROLE[role] ?? ['problem solving', 'code quality', 'collaboration'];
+
+  // Senior+ roles always include architecture/tradeoffs
+  if (['Senior', 'Staff'].includes(level)) {
+    focusAreas = [...focusAreas, ...SENIOR_FOCUS_EXTRAS.filter((f) => !focusAreas.includes(f))];
+  }
+
+  const lines = [
+    `Role: ${level} ${role}`,
+    `Seniority: ${level}`,
+    '',
+    `We are looking for a ${level} ${role} to join our team.`,
+    '',
+    `Culture and values: ${culture.join(', ')}.`,
+    '',
+    `Key focus areas: ${focusAreas.join(', ')}.`,
+  ];
+
+  if (tech.length > 0) {
+    lines.push('', `Required technologies: ${tech.join(', ')}.`);
+  }
+
+  return lines.join('\n');
 }

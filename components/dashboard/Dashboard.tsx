@@ -11,6 +11,7 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import LogoutIcon from '@mui/icons-material/Logout';
 import type { DashboardResponse, SessionSummary } from '@/lib/schemas';
+import type { SessionAllowance } from '@/lib/services/billingService';
 import { ScoreTrendChart } from './ScoreTrendChart';
 import styles from './dashboard.module.scss';
 
@@ -40,9 +41,11 @@ interface DashboardProps {
   userName?: string;
   /** Dashboard data fetched server-side (null if user not resolved) */
   data?: DashboardResponse | null;
+  /** Session allowance info (tier, used, remaining) */
+  allowance?: SessionAllowance | null;
 }
 
-export default function Dashboard({ userName, data }: DashboardProps) {
+export default function Dashboard({ userName, data, allowance }: DashboardProps) {
   const router = useRouter();
   const { signOut } = useClerk();
   const sessions = data?.sessions ?? [];
@@ -84,6 +87,35 @@ export default function Dashboard({ userName, data }: DashboardProps) {
             </Tooltip>
           </Box>
         </Box>
+
+        {/* Session allowance */}
+        {allowance && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              px: 2,
+              py: 1.5,
+              borderRadius: 1,
+              bgcolor: allowance.remaining === 0 ? 'error.50' : 'action.hover',
+              border: '1px solid',
+              borderColor: allowance.remaining === 0 ? 'error.200' : 'divider',
+            }}
+          >
+            <Chip
+              label={allowance.tier === 'free' ? 'Free plan' : `${allowance.tier.charAt(0).toUpperCase() + allowance.tier.slice(1)} plan`}
+              size="small"
+              color={allowance.tier === 'free' ? 'default' : 'primary'}
+              variant="outlined"
+            />
+            <Typography variant="body2" color={allowance.remaining === 0 ? 'error.main' : 'text.secondary'}>
+              {allowance.remaining === 0
+                ? `No sessions remaining this month (${allowance.used}/${allowance.limit} used)`
+                : `${allowance.remaining} session${allowance.remaining !== 1 ? 's' : ''} remaining this month (${allowance.used}/${allowance.limit} used)`}
+            </Typography>
+          </Box>
+        )}
 
         {/* Stats + Trend */}
         {totalSessions > 0 && (

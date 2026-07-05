@@ -111,7 +111,32 @@ const realFeedbackService: IFeedbackService = {
       throw new Error(`No questions found for session ${sessionId}.`);
     }
 
-    // 2. Build the full transcript for the LLM
+    // 2. Check if a report already exists (avoid duplicate key error on revisit)
+    const existing = await feedbackRepository.findBySessionId(sessionId);
+
+    if (existing) {
+      // Return the previously generated report with per-question breakdown
+      return {
+        sessionId,
+        overallScore: existing.overallScore,
+        technicalAccuracyScore: existing.technicalAccuracyScore,
+        communicationScore: existing.communicationScore,
+        structureScore: existing.structureScore,
+        synthesizedInsight: existing.synthesizedInsight,
+        diagnosis: (existing as { diagnosis?: string }).diagnosis ?? '',
+        questions: questions.map((q) => ({
+          text: q.text,
+          type: q.type as 'behavioral' | 'architectural' | 'follow_up' | 'rescue',
+          order: q.order,
+          isFollowUp: q.isFollowUp ?? false,
+          answerTranscript: q.answerTranscript ?? '',
+          scores: q.scores ?? null,
+          strongAnswerNotes: q.strongAnswerNotes ?? '',
+        })),
+      };
+    }
+
+    // 3. Build the full transcript for the LLM
     const transcriptLines = questions.map((q, i) => {
       const answer = q.answerTranscript || '(no answer recorded)';
       return `Q${i + 1} [${q.type}]: ${q.text}\nA${i + 1}: ${answer}`;
@@ -119,7 +144,7 @@ const realFeedbackService: IFeedbackService = {
 
     const fullTranscript = transcriptLines.join('\n\n');
 
-    // 3. Call LLM for the holistic report
+    // 4. Call LLM for the holistic report
     const result = await llm.generateStructuredOutput({
       messages: [
         { role: 'system', content: REPORT_GENERATION_PROMPT },
@@ -133,7 +158,7 @@ const realFeedbackService: IFeedbackService = {
       temperature: 0.3,
     });
 
-    // 4. Persist feedback report
+    // 5. Persist feedback report
     await feedbackRepository.create({
       sessionId,
       overallScore: result.overallScore,
@@ -143,10 +168,10 @@ const realFeedbackService: IFeedbackService = {
       synthesizedInsight: result.synthesizedInsight,
     });
 
-    // 5. Update session's overall score
+    // 6. Update session's overall score
     await sessionRepository.setOverallScore(sessionId, result.overallScore);
 
-    // 6. Build and return the full response (includes per-question breakdown)
+    // 7. Build and return the full response (includes per-question breakdown)
     return {
       sessionId,
       overallScore: result.overallScore,
