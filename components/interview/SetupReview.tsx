@@ -78,6 +78,7 @@ export default function SetupReview() {
             </ListItemIcon>
             <ListItemText
               primary="Tech stack"
+              slotProps={{ secondary: { component: 'div' } }}
               secondary={
                 <Box className={styles.chipRow} component="span">
                   {parsedSignals.stack.map((tech) => (
@@ -94,6 +95,7 @@ export default function SetupReview() {
             </ListItemIcon>
             <ListItemText
               primary="Culture signals"
+              slotProps={{ secondary: { component: 'div' } }}
               secondary={
                 <Box className={styles.chipRow} component="span">
                   {parsedSignals.culture.map((val) => (
