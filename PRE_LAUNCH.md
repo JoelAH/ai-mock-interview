@@ -54,7 +54,6 @@ All keys listed in `.env.example` must be populated in your hosting environment:
 - [ ] `ELEVENLABS_API_KEY` (only needed once Premium tier flips to ElevenLabs)
 - [ ] `LEMONSQUEEZY_API_KEY` / `LEMONSQUEEZY_WEBHOOK_SECRET` / `LEMONSQUEEZY_STORE_ID`
 - [ ] `LEMONSQUEEZY_VARIANT_STARTER` / `LEMONSQUEEZY_VARIANT_PRO` / `LEMONSQUEEZY_VARIANT_PREMIUM`
-- [ ] `AWS_REGION` / `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `S3_AUDIO_BUCKET`
 - [ ] `USE_MOCKS=false` (must be explicitly false in production)
 
 ### Webhook endpoints to register
