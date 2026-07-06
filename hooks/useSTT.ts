@@ -90,6 +90,7 @@ export function useSTT({ onTranscript, onError }: UseSTTOptions = {}) {
       const { token, url } = await tokenRes.json();
 
       // 2. Open WebSocket to Deepgram
+      // Deepgram authenticates via Sec-WebSocket-Protocol header: ['token', '<key>']
       const ws = new WebSocket(url, ['token', token]);
       wsRef.current = ws;
 
@@ -120,24 +121,25 @@ export function useSTT({ onTranscript, onError }: UseSTTOptions = {}) {
         }
       };
 
-      ws.onerror = () => {
-        onErrorRef.current?.(new Error('Deepgram WebSocket error'));
-      };
-
       ws.onclose = () => {
         // Normal close — no action needed
       };
 
       // 3. Wait for WebSocket to open before starting audio
       await new Promise<void>((resolve, reject) => {
-        ws.onopen = () => resolve();
-        // If it fails to open, the onerror above will fire
-        const timeout = setTimeout(() => reject(new Error('WebSocket open timeout')), 5000);
-        const origOnOpen = ws.onopen;
-        ws.onopen = (e) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('WebSocket open timeout'));
+        }, 10000);
+
+        ws.addEventListener('open', () => {
           clearTimeout(timeout);
-          (origOnOpen as (ev: Event) => void)?.(e);
-        };
+          resolve();
+        }, { once: true });
+
+        ws.addEventListener('error', () => {
+          clearTimeout(timeout);
+          reject(new Error('WebSocket failed to connect'));
+        }, { once: true });
       });
 
       // 4. Get mic audio

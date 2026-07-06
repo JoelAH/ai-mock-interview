@@ -54,6 +54,10 @@ function buildListenUrl(): string {
  * temporary JWT with usage::write permission (STT + TTS only, no
  * management access). The token is valid for TOKEN_TTL_SECONDS.
  *
+ * The API key used must have at least Member permissions for the grant
+ * endpoint to succeed. If it fails, this function throws — the raw API
+ * key is NEVER sent to the client.
+ *
  * Once the browser uses this token to open a WebSocket, the connection
  * stays alive beyond the token's TTL — the token only needs to be valid
  * at the moment of connection.
@@ -69,31 +73,42 @@ export async function mintScopedToken(): Promise<DeepgramToken> {
 
   const apiKey = requireEnv('DEEPGRAM_API_KEY');
 
-  const response = await fetch('https://api.deepgram.com/v1/auth/grant', {
-    method: 'POST',
-    headers: {
-      Authorization: `Token ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ ttl_seconds: TOKEN_TTL_SECONDS }),
-  });
+  // Try the scoped grant endpoint first
+  try {
+    const response = await fetch('https://api.deepgram.com/v1/auth/grant', {
+      method: 'POST',
+      headers: {
+        Authorization: `Token ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ ttl_seconds: TOKEN_TTL_SECONDS }),
+    });
 
-  if (!response.ok) {
-    const errorBody = await response.text().catch(() => 'Unknown error');
-    throw new Error(
-      `Deepgram token grant failed (${response.status}): ${errorBody}`,
+    if (response.ok) {
+      const data = (await response.json()) as { access_token: string; expires_in: number };
+
+      if (data.access_token) {
+        return {
+          token: data.access_token,
+          url: buildListenUrl(),
+          expiresAt: new Date(Date.now() + data.expires_in * 1000).toISOString(),
+        };
+      }
+    }
+
+    // Log the failure for debugging but don't throw
+    const errorBody = await response.text().catch(() => '');
+    console.warn(
+      `[Deepgram] Token grant returned ${response.status}: ${errorBody}.`,
     );
+  } catch (err) {
+    console.warn('[Deepgram] Token grant request failed:', err);
   }
 
-  const data = (await response.json()) as { access_token: string; expires_in: number };
-
-  if (!data.access_token) {
-    throw new Error('Deepgram token grant returned no access_token.');
-  }
-
-  return {
-    token: data.access_token,
-    url: buildListenUrl(),
-    expiresAt: new Date(Date.now() + data.expires_in * 1000).toISOString(),
-  };
+  // If we get here, the grant failed. Throw so the caller (API route) returns 500.
+  // Never expose the raw API key to the client.
+  throw new Error(
+    'Deepgram token grant failed. Ensure DEEPGRAM_API_KEY has Member permissions. ' +
+    'See: https://developers.deepgram.com/guides/fundamentals/token-based-authentication',
+  );
 }
