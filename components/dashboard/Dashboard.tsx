@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useClerk } from '@clerk/nextjs';
+import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
@@ -10,6 +11,8 @@ import AddIcon from '@mui/icons-material/Add';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import LogoutIcon from '@mui/icons-material/Logout';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
 import type { DashboardResponse, SessionSummary } from '@/lib/schemas';
 import type { SessionAllowance } from '@/lib/services/billingService';
 import { ScoreTrendChart } from './ScoreTrendChart';
@@ -51,6 +54,15 @@ export default function Dashboard({ userName, data, allowance }: DashboardProps)
   const sessions = data?.sessions ?? [];
   const totalSessions = data?.totalSessions ?? 0;
   const averageScore = data?.averageScore ?? null;
+  const [limitAlert, setLimitAlert] = useState(false);
+
+  const handleNewInterview = () => {
+    if (allowance && allowance.remaining === 0) {
+      setLimitAlert(true);
+      return;
+    }
+    router.push('/interview/new');
+  };
 
   return (
     <Box className={styles.page}>
@@ -71,7 +83,7 @@ export default function Dashboard({ userName, data, allowance }: DashboardProps)
             <Button
               variant="contained"
               startIcon={<AddIcon />}
-              onClick={() => router.push('/interview/new')}
+              onClick={handleNewInterview}
             >
               New interview
             </Button>
@@ -149,7 +161,7 @@ export default function Dashboard({ userName, data, allowance }: DashboardProps)
             <Button
               variant="outlined"
               startIcon={<AddIcon />}
-              onClick={() => router.push('/interview/new')}
+              onClick={handleNewInterview}
               sx={{ mt: 2 }}
             >
               Start your first interview
@@ -166,6 +178,18 @@ export default function Dashboard({ userName, data, allowance }: DashboardProps)
           </Box>
         )}
       </Box>
+
+      {/* Session limit alert */}
+      <Snackbar
+        open={limitAlert}
+        autoHideDuration={5000}
+        onClose={() => setLimitAlert(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity="warning" onClose={() => setLimitAlert(false)} variant="filled">
+          You have no sessions remaining this month. Upgrade your plan to continue practicing.
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

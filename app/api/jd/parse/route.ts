@@ -1,6 +1,6 @@
 import { auth } from '@clerk/nextjs/server';
 import { jdParseRequestSchema } from '@/lib/schemas';
-import { jdService, authService } from '@/lib/services';
+import { jdService, authService, billingService } from '@/lib/services';
 
 /**
  * POST /api/jd/parse
@@ -22,7 +22,21 @@ export async function POST(request: Request) {
     return Response.json({ error: 'User not found' }, { status: 401 });
   }
 
-  // 2. Parse and validate request body.
+  // 2. Enforce session cap — check billing allowance before creating anything.
+  const allowance = await billingService.canCreateSession(clerkUserId);
+  if (!allowance.allowed) {
+    return Response.json(
+      {
+        error: 'Session limit reached',
+        reason: allowance.reason,
+        used: allowance.used,
+        limit: allowance.limit,
+      },
+      { status: 403 },
+    );
+  }
+
+  // 3. Parse and validate request body.
   let body: unknown;
   try {
     body = await request.json();
@@ -40,7 +54,7 @@ export async function POST(request: Request) {
 
   const { jdText, sourceType } = validation.data;
 
-  // 3. Delegate to service layer (pass internal MongoDB user ID).
+  // 4. Delegate to service layer (pass internal MongoDB user ID).
   try {
     const result = await jdService.parse(user._id.toString(), jdText, sourceType);
     return Response.json(result, { status: 200 });
