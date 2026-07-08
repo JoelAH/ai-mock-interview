@@ -183,13 +183,8 @@ export function useSTT({ onTranscript, onError }: UseSTTOptions = {}) {
         }
       };
 
-      // Persistent close handler — the source of truth for diagnosing drops
-      // (code/reason, and whether the socket ever opened), unlike the transient
-      // race listeners below.
-      ws.onclose = (event) => {
-        console.warn(
-          `[useSTT] socket closed: code=${event.code} reason="${event.reason}" wasClean=${event.wasClean} didOpen=${didOpen}`,
-        );
+      ws.onclose = () => {
+        // Normal lifecycle — no action needed.
       };
 
       // 4. Wait for the socket to open (or fail) before wiring up audio.
@@ -236,7 +231,6 @@ export function useSTT({ onTranscript, onError }: UseSTTOptions = {}) {
         const inputData = e.inputBuffer.getChannelData(0);
         const pcmBuffer = downsampleToInt16(inputData, audioCtx.sampleRate);
         ws.send(pcmBuffer);
-        if (sentChunks === 0) console.log('[useSTT] first audio chunk sent; ctx.state=', audioCtx.state);
         sentChunks++;
       };
 

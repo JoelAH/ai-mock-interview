@@ -35,12 +35,18 @@ interface CurrentQuestion {
   order: number;
 }
 
+/** Format a question type string for display (e.g. 'follow_up' → 'Follow-up', 'architectural' → 'Architectural') */
+function formatQuestionType(type: string): string {
+  if (type === 'follow_up') return 'Follow-up';
+  return type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, ' ');
+}
+
 export default function InterviewSession() {
   const router = useRouter();
   const [phase, setPhase] = useState<TurnPhase>('loading');
   const [currentQuestion, setCurrentQuestion] = useState<CurrentQuestion | null>(null);
   const [questionIndex, setQuestionIndex] = useState(0);
-  const [totalQuestions, setTotalQuestions] = useState(4); // estimate, updated as we go
+  const [questionsAsked, setQuestionsAsked] = useState(0); // actual count so far
   const [transcript, setTranscript] = useState('');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +56,7 @@ export default function InterviewSession() {
   // Keep phaseRef in sync for use inside callbacks
   phaseRef.current = phase;
 
-  const progress = ((questionIndex + (phase === 'done' ? 1 : 0)) / totalQuestions) * 100;
+  const progress = phase === 'done' ? 100 : 0; // no bar until done — question count is unpredictable
 
   // ---- TTS hook: plays the question audio during "asking" phase ----
   const { speak, stop: stopTTS } = useTTS({
@@ -145,6 +151,7 @@ export default function InterviewSession() {
           const chunk = JSON.parse(data);
 
           if (chunk.type === 'question') {
+            setQuestionsAsked((prev) => prev + 1);
             setCurrentQuestion({
               text: chunk.text,
               type: chunk.questionType,
@@ -264,7 +271,7 @@ export default function InterviewSession() {
         {/* Progress header */}
         <Box className={styles.header} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="body2" color="text.secondary">
-            Question {questionIndex + 1}{totalQuestions > 0 ? ` of ~${totalQuestions}` : ''}
+            Question {questionsAsked}
           </Typography>
           {phase !== 'done' && phase !== 'loading' && (
             <Button
@@ -318,15 +325,14 @@ export default function InterviewSession() {
               {/* Question display */}
               <Box className={styles.questionCard}>
                 <Box className={styles.questionMeta}>
+                  {/* Show the question type, formatted nicely. If it's a follow-up,
+                      the type IS "Follow-up" so we don't need a separate chip. */}
                   <Chip
-                    label={currentQuestion.type}
+                    label={formatQuestionType(currentQuestion.type)}
                     size="small"
                     color={currentQuestion.isFollowUp ? 'secondary' : 'default'}
-                    variant="outlined"
+                    variant={currentQuestion.isFollowUp ? 'filled' : 'outlined'}
                   />
-                  {currentQuestion.isFollowUp && (
-                    <Chip label="Follow-up" size="small" color="secondary" variant="filled" />
-                  )}
                 </Box>
                 <Typography variant="h6" className={styles.questionText}>
                   {currentQuestion.text}

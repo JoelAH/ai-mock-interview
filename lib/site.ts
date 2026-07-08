@@ -160,8 +160,9 @@ export const PLANS: Plan[] = [
     cta: 'Choose Starter',
     featured: false,
     perks: [
-      '8 interviews / month',
+      '10 interviews / month',
       'Behavioral + architectural',
+      'Job-description tailoring',
       'Full scored reports + insights',
       'Progress trend over time',
     ],
@@ -190,8 +191,9 @@ export const PLANS: Plan[] = [
     cta: 'Go Premium',
     featured: false,
     perks: [
-      '30 interviews / month',
+      '60 interviews / month',
       'Behavioral + architectural',
+      'Job-description tailoring',
       'Full scored reports + insights',
       'Progress trend over time',
       'Practice-this-gap-again sessions',
