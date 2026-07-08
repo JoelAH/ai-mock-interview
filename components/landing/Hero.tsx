@@ -7,13 +7,13 @@ import styles from './landing.module.scss';
 export function Hero() {
   return (
     <section className={styles.hero}>
-      <div className={styles.heroGlow} />
-      <div className={styles.heroGrid} />
+      <div className={styles.heroGlow} aria-hidden="true" />
+      <div className={styles.heroGrid} aria-hidden="true" />
 
       <div className={styles.heroInner}>
         <div className={styles.heroCopy}>
           <span className={styles.recTag}>
-            <span className={styles.recDot} />
+            <span className={styles.recDot} aria-hidden="true" />
             Live voice practice
           </span>
 
@@ -45,14 +45,14 @@ export function Hero() {
         <div className={styles.heroVisual}>
           <div className={styles.visualFrame}>
             <Image
-              src="/sinterview.jpg"
+              src="/ai-mock-interview-practice.jpg"
               alt="A candidate practicing a spoken mock interview with DevMockview"
               fill
               priority
               sizes="(min-width: 1024px) 45vw, 90vw"
               className={styles.visualImg}
             />
-            <div className={styles.visualScrim} />
+            <div className={styles.visualScrim} aria-hidden="true" />
 
             <div className={`${styles.floatCard} ${styles.floatThinking}`}>
               <Waveform bars={5} />

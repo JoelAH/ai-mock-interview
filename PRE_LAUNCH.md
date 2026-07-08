@@ -118,7 +118,7 @@ The UI screens were built on mock data (Phase 2). They need to be wired to the r
 
 ### Hero image alt text
 
-- [ ] Verify the `alt` attribute on the hero image (`/sinterview.jpg`) accurately describes the photo's content — current text assumes it shows a candidate
+- [ ] Verify the `alt` attribute on the hero image (`/ai-mock-interview-practice.jpg`) accurately describes the photo's content — current text assumes it shows a candidate
 
 ### Accessibility audit
 
