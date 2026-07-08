@@ -75,24 +75,86 @@ export function useSTT({ onTranscript, onError }: UseSTTOptions = {}) {
     return output.buffer;
   }, []);
 
+  /** Clean up all resources. Defined before start() so start can reuse it. */
+  const cleanup = useCallback(() => {
+    // Disconnect audio nodes
+    if (processorRef.current) {
+      processorRef.current.onaudioprocess = null;
+      processorRef.current.disconnect();
+      processorRef.current = null;
+    }
+    if (sourceRef.current) {
+      sourceRef.current.disconnect();
+      sourceRef.current = null;
+    }
+
+    // Close audio context
+    if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
+      audioCtxRef.current.close().catch(() => {});
+      audioCtxRef.current = null;
+    }
+
+    // Stop mic stream
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+
+    // Close WebSocket with an explicit normal-closure code. Calling close()
+    // with no code produces a 1005 ("no status") close event, which is
+    // indistinguishable from an abnormal server drop.
+    if (wsRef.current) {
+      const sock = wsRef.current;
+      wsRef.current = null;
+      if (sock.readyState === WebSocket.OPEN) {
+        try { sock.send(new Uint8Array(0)); } catch {}
+      }
+      if (sock.readyState === WebSocket.OPEN || sock.readyState === WebSocket.CONNECTING) {
+        try { sock.close(1000, 'client cleanup'); } catch {}
+      }
+    }
+  }, []);
+
   /** Start listening — request mic, connect to Deepgram */
   const start = useCallback(async () => {
+    // Tear down any prior session first so sockets/streams never overlap.
+    cleanup();
+
     // Reset transcript state
     finalsRef.current = [];
     interimRef.current = '';
 
     try {
-      // 1. Get scoped token from our server
+      // 1. Get mic audio FIRST. Doing this before opening the socket means
+      //    audio starts flowing right on open — Deepgram closes idle
+      //    connections (~10-12s with no audio), which surfaces as a 1005 close.
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: TARGET_SAMPLE_RATE,
+        },
+      });
+      streamRef.current = stream;
+
+      // 2. Get scoped token from our server
       const tokenRes = await fetch('/api/deepgram/token', { method: 'POST' });
       if (!tokenRes.ok) {
-        throw new Error(`Token API error: ${tokenRes.status}`);
+        const errBody = await tokenRes.json().catch(() => ({}));
+        throw new Error(
+          errBody.detail || errBody.error || `Token API error: ${tokenRes.status}`,
+        );
       }
       const { token, url } = await tokenRes.json();
 
-      // 2. Open WebSocket to Deepgram
-      // Deepgram authenticates via Sec-WebSocket-Protocol header: ['token', '<key>']
-      const ws = new WebSocket(url, ['token', token]);
+      // 3. Open WebSocket to Deepgram.
+      // The token from /v1/auth/grant is a temporary JWT, which Deepgram
+      // authenticates over the browser WebSocket via the 'bearer' subprotocol.
+      // (The 'token' subprotocol is only for raw API keys; query-param auth is
+      // rejected. Verified against the live API.)
+      const ws = new WebSocket(url, ['bearer', token]);
       wsRef.current = ws;
+      let didOpen = false;
 
       ws.onmessage = (event) => {
         try {
@@ -121,40 +183,43 @@ export function useSTT({ onTranscript, onError }: UseSTTOptions = {}) {
         }
       };
 
-      ws.onclose = () => {
-        // Normal close — no action needed
+      // Persistent close handler — the source of truth for diagnosing drops
+      // (code/reason, and whether the socket ever opened), unlike the transient
+      // race listeners below.
+      ws.onclose = (event) => {
+        console.warn(
+          `[useSTT] socket closed: code=${event.code} reason="${event.reason}" wasClean=${event.wasClean} didOpen=${didOpen}`,
+        );
       };
 
-      // 3. Wait for WebSocket to open before starting audio
+      // 4. Wait for the socket to open (or fail) before wiring up audio.
+      //    Named handlers are removed on settle so a later close doesn't
+      //    trigger a misleading "closed before opening" rejection.
       await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error('WebSocket open timeout'));
-        }, 10000);
-
-        ws.addEventListener('open', () => {
+        const settle = () => {
           clearTimeout(timeout);
-          resolve();
-        }, { once: true });
-
-        ws.addEventListener('error', () => {
-          clearTimeout(timeout);
-          reject(new Error('WebSocket failed to connect'));
-        }, { once: true });
+          ws.removeEventListener('open', onOpen);
+          ws.removeEventListener('close', onClose);
+          ws.removeEventListener('error', onError);
+        };
+        const onOpen = () => { didOpen = true; settle(); resolve(); };
+        const onClose = (event: CloseEvent) => { settle(); reject(new Error(`WebSocket closed before connecting (code ${event.code})`)); };
+        const onError = () => { settle(); reject(new Error('WebSocket failed to connect')); };
+        const timeout = setTimeout(() => { settle(); reject(new Error('WebSocket open timeout')); }, 10000);
+        ws.addEventListener('open', onOpen);
+        ws.addEventListener('close', onClose);
+        ws.addEventListener('error', onError);
       });
-
-      // 4. Get mic audio
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          sampleRate: TARGET_SAMPLE_RATE,
-        },
-      });
-      streamRef.current = stream;
 
       // 5. Set up audio processing pipeline
       const audioCtx = new AudioContext({ sampleRate: TARGET_SAMPLE_RATE });
       audioCtxRef.current = audioCtx;
+      // Chrome creates AudioContexts in a "suspended" state; without resuming,
+      // onaudioprocess never fires, no audio is sent, and Deepgram drops the
+      // idle socket (1005). Resume explicitly.
+      if (audioCtx.state === 'suspended') {
+        await audioCtx.resume().catch(() => {});
+      }
 
       const source = audioCtx.createMediaStreamSource(stream);
       sourceRef.current = source;
@@ -164,23 +229,25 @@ export function useSTT({ onTranscript, onError }: UseSTTOptions = {}) {
       const processor = audioCtx.createScriptProcessor(BUFFER_SIZE, 1, 1);
       processorRef.current = processor;
 
+      let sentChunks = 0;
       processor.onaudioprocess = (e) => {
         if (ws.readyState !== WebSocket.OPEN) return;
 
         const inputData = e.inputBuffer.getChannelData(0);
         const pcmBuffer = downsampleToInt16(inputData, audioCtx.sampleRate);
         ws.send(pcmBuffer);
+        if (sentChunks === 0) console.log('[useSTT] first audio chunk sent; ctx.state=', audioCtx.state);
+        sentChunks++;
       };
 
       source.connect(processor);
       processor.connect(audioCtx.destination); // Required for onaudioprocess to fire
-
     } catch (err) {
       console.error('[useSTT] Start failed:', err);
       onErrorRef.current?.(err as Error);
       cleanup();
     }
-  }, [downsampleToInt16, emitTranscript]);
+  }, [downsampleToInt16, emitTranscript, cleanup]);
 
   /** Stop listening and close all resources */
   const stop = useCallback(() => {
@@ -191,7 +258,7 @@ export function useSTT({ onTranscript, onError }: UseSTTOptions = {}) {
       interimRef.current = '';
     }
     emitTranscript(true);
-  }, [emitTranscript]);
+  }, [emitTranscript, cleanup]);
 
   /** Get the current accumulated transcript */
   const getTranscript = useCallback((): string => {
@@ -200,41 +267,6 @@ export function useSTT({ onTranscript, onError }: UseSTTOptions = {}) {
       parts.push(interimRef.current);
     }
     return parts.join(' ').trim();
-  }, []);
-
-  /** Clean up all resources */
-  const cleanup = useCallback(() => {
-    // Disconnect audio nodes
-    if (processorRef.current) {
-      processorRef.current.disconnect();
-      processorRef.current = null;
-    }
-    if (sourceRef.current) {
-      sourceRef.current.disconnect();
-      sourceRef.current = null;
-    }
-
-    // Close audio context
-    if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
-      audioCtxRef.current.close().catch(() => {});
-      audioCtxRef.current = null;
-    }
-
-    // Stop mic stream
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-
-    // Close WebSocket (send close signal to Deepgram first)
-    if (wsRef.current) {
-      if (wsRef.current.readyState === WebSocket.OPEN) {
-        // Send empty buffer to signal end of audio
-        wsRef.current.send(new Uint8Array(0));
-        wsRef.current.close();
-      }
-      wsRef.current = null;
-    }
   }, []);
 
   return { start, stop, getTranscript };

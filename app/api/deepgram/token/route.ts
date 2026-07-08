@@ -22,9 +22,10 @@ export async function POST() {
     const tokenData = await mintScopedToken();
     return Response.json(tokenData, { status: 200 });
   } catch (err) {
-    console.error('[POST /api/deepgram/token] Error minting token:', err);
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('[POST /api/deepgram/token] Error minting token:', message);
     return Response.json(
-      { error: 'Failed to generate transcription token' },
+      { error: 'Failed to generate transcription token', detail: message },
       { status: 500 },
     );
   }

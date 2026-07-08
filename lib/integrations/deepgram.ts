@@ -31,7 +31,9 @@ const DEEPGRAM_WS_BASE = 'wss://api.deepgram.com/v1/listen';
 
 /**
  * Builds the full WebSocket URL with query params for streaming STT.
- * The client opens this URL directly with the scoped token as Bearer auth.
+ * The scoped JWT is NOT placed in the URL — Deepgram authenticates the
+ * browser WebSocket via the Sec-WebSocket-Protocol subprotocol instead
+ * (see useSTT: ['bearer', <jwt>]). Query-param token auth is not accepted.
  */
 function buildListenUrl(): string {
   const params = new URLSearchParams({
@@ -81,7 +83,7 @@ export async function mintScopedToken(): Promise<DeepgramToken> {
         Authorization: `Token ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ ttl_seconds: TOKEN_TTL_SECONDS }),
+      body: JSON.stringify({}),
     });
 
     if (response.ok) {
