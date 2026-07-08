@@ -46,7 +46,7 @@ export function Hero() {
           <div className={styles.visualFrame}>
             <Image
               src="/sinterview.jpg"
-              alt="A candidate practicing a spoken mock interview with Sinterview"
+              alt="A candidate practicing a spoken mock interview with DevMockview"
               fill
               priority
               sizes="(min-width: 1024px) 45vw, 90vw"

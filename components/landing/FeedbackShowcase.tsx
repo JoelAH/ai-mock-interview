@@ -28,7 +28,7 @@ export function FeedbackShowcase() {
             See the tape, not just a vibe.
           </h2>
           <p className={styles.sectionLede}>
-            Most prep leaves you guessing. Sinterview ends every session with a number, three
+            Most prep leaves you guessing. DevMockview ends every session with a number, three
             sub-scores, and the single highest-leverage habit to change.
           </p>
 

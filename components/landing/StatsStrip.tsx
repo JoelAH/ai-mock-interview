@@ -3,7 +3,7 @@ import styles from './landing.module.scss';
 
 export function StatsStrip() {
   return (
-    <section className={styles.stats} aria-label="Sinterview at a glance">
+    <section className={styles.stats} aria-label="DevMockview at a glance">
       <div className={styles.statsInner}>
         {STATS.map((stat) => (
           <div key={stat.label} className={styles.stat}>
