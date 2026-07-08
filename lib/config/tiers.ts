@@ -1,3 +1,5 @@
+import 'server-only';
+
 /**
  * Subscription tier configuration.
  *
@@ -47,7 +49,7 @@ export const tierConfigs: Record<SubscriptionTier, TierConfig> = {
     tier: 'starter',
     label: 'Starter',
     priceUsd: 19,
-    sessionsPerMonth: 8,
+    sessionsPerMonth: 10,
     ttsProvider: 'deepgram',
     lemonVariantId: process.env.LEMONSQUEEZY_VARIANT_STARTER ?? null,
   },
@@ -63,7 +65,7 @@ export const tierConfigs: Record<SubscriptionTier, TierConfig> = {
     tier: 'premium',
     label: 'Premium',
     priceUsd: 79,
-    sessionsPerMonth: 30,
+    sessionsPerMonth: 60,
     // MVP: Deepgram TTS. Change to 'elevenlabs' to enable the premium voice.
     ttsProvider: 'deepgram',
     lemonVariantId: process.env.LEMONSQUEEZY_VARIANT_PREMIUM ?? null,

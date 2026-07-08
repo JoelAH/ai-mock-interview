@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useClerk } from '@clerk/nextjs';
+import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
@@ -10,8 +11,10 @@ import AddIcon from '@mui/icons-material/Add';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { mockDashboardResponse } from '@/lib/mock';
-import type { SessionSummary } from '@/lib/schemas';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
+import type { DashboardResponse, SessionSummary } from '@/lib/schemas';
+import type { SessionAllowance } from '@/lib/services/billingService';
 import { ScoreTrendChart } from './ScoreTrendChart';
 import styles from './dashboard.module.scss';
 
@@ -39,13 +42,27 @@ function scoreColor(score: number | null): string {
 interface DashboardProps {
   /** Optional user name for greeting */
   userName?: string;
+  /** Dashboard data fetched server-side (null if user not resolved) */
+  data?: DashboardResponse | null;
+  /** Session allowance info (tier, used, remaining) */
+  allowance?: SessionAllowance | null;
 }
 
-export default function Dashboard({ userName }: DashboardProps) {
+export default function Dashboard({ userName, data, allowance }: DashboardProps) {
   const router = useRouter();
   const { signOut } = useClerk();
-  const data = mockDashboardResponse;
-  const { sessions, totalSessions, averageScore } = data;
+  const sessions = data?.sessions ?? [];
+  const totalSessions = data?.totalSessions ?? 0;
+  const averageScore = data?.averageScore ?? null;
+  const [limitAlert, setLimitAlert] = useState(false);
+
+  const handleNewInterview = () => {
+    if (allowance && allowance.remaining === 0) {
+      setLimitAlert(true);
+      return;
+    }
+    router.push('/interview/new');
+  };
 
   return (
     <Box className={styles.page}>
@@ -66,7 +83,7 @@ export default function Dashboard({ userName }: DashboardProps) {
             <Button
               variant="contained"
               startIcon={<AddIcon />}
-              onClick={() => router.push('/interview/new')}
+              onClick={handleNewInterview}
             >
               New interview
             </Button>
@@ -82,6 +99,35 @@ export default function Dashboard({ userName }: DashboardProps) {
             </Tooltip>
           </Box>
         </Box>
+
+        {/* Session allowance */}
+        {allowance && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              px: 2,
+              py: 1.5,
+              borderRadius: 1,
+              bgcolor: allowance.remaining === 0 ? 'error.50' : 'action.hover',
+              border: '1px solid',
+              borderColor: allowance.remaining === 0 ? 'error.200' : 'divider',
+            }}
+          >
+            <Chip
+              label={allowance.tier === 'free' ? 'Free plan' : `${allowance.tier.charAt(0).toUpperCase() + allowance.tier.slice(1)} plan`}
+              size="small"
+              color={allowance.tier === 'free' ? 'default' : 'primary'}
+              variant="outlined"
+            />
+            <Typography variant="body2" color={allowance.remaining === 0 ? 'error.main' : 'text.secondary'}>
+              {allowance.remaining === 0
+                ? `No sessions remaining this month (${allowance.used}/${allowance.limit} used)`
+                : `${allowance.remaining} session${allowance.remaining !== 1 ? 's' : ''} remaining this month (${allowance.used}/${allowance.limit} used)`}
+            </Typography>
+          </Box>
+        )}
 
         {/* Stats + Trend */}
         {totalSessions > 0 && (
@@ -115,7 +161,7 @@ export default function Dashboard({ userName }: DashboardProps) {
             <Button
               variant="outlined"
               startIcon={<AddIcon />}
-              onClick={() => router.push('/interview/new')}
+              onClick={handleNewInterview}
               sx={{ mt: 2 }}
             >
               Start your first interview
@@ -132,6 +178,18 @@ export default function Dashboard({ userName }: DashboardProps) {
           </Box>
         )}
       </Box>
+
+      {/* Session limit alert */}
+      <Snackbar
+        open={limitAlert}
+        autoHideDuration={5000}
+        onClose={() => setLimitAlert(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity="warning" onClose={() => setLimitAlert(false)} variant="filled">
+          You have no sessions remaining this month. Upgrade your plan to continue practicing.
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
@@ -142,13 +200,13 @@ function SessionRow({ session }: { session: SessionSummary }) {
   return (
     <Box
       className={styles.sessionRow}
-      onClick={() => router.push('/interview/feedback')}
+      onClick={() => router.push(`/interview/feedback?sessionId=${session.sessionId}`)}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          router.push('/interview/feedback');
+          router.push(`/interview/feedback?sessionId=${session.sessionId}`);
         }
       }}
       aria-label={`View session: ${session.parsedSignals?.role ?? 'Interview'}`}

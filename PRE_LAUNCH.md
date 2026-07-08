@@ -13,11 +13,11 @@ have** can follow in the first few weeks.
 
 | Constant | Current value | What to replace it with |
 |----------|---------------|-------------------------|
-| `entity` | `Sinterview` | Your registered legal entity name (e.g. "Sinterview LLC") |
+| `entity` | `DevMockview` | Your registered legal entity name (e.g. "DevMockview LLC") |
 | `governingLaw` | `[Your State/Country, e.g. the State of Delaware, USA]` | The actual jurisdiction whose laws govern your terms |
 | `jurisdiction` | `[Your county/court venue, e.g. New Castle County, Delaware]` | The venue for disputes / arbitration seat |
-| `contactEmail` | `legal@sinterview.app` | A monitored legal-contact address |
-| `privacyEmail` | `privacy@sinterview.app` | A monitored privacy-request address |
+| `contactEmail` | `legal@devmockview.app` | A monitored legal-contact address |
+| `privacyEmail` | `privacy@devmockview.app` | A monitored privacy-request address |
 | `effectiveDate` | `February 1, 2025` | The date you actually publish the final versions |
 | `consentVersion` | `2025-02-01` | Update whenever the voice-consent wording changes |
 
@@ -25,8 +25,8 @@ have** can follow in the first few weeks.
 
 | Constant | Current value | Action |
 |----------|---------------|--------|
-| `SITE.url` | `https://sinterview.app` | Confirm this is the production domain — it drives `metadataBase`, canonical URLs, `sitemap.xml`, `robots.txt`, JSON-LD, and the OG image |
-| `SITE.twitter` | `@sinterview` | Replace with the actual Twitter/X handle, or remove |
+| `SITE.url` | `https://devmockview.app` | Confirm this is the production domain — it drives `metadataBase`, canonical URLs, `sitemap.xml`, `robots.txt`, JSON-LD, and the OG image |
+| `SITE.twitter` | `@devmockview` | Replace with the actual Twitter/X handle, or remove |
 
 ### Attorney review of legal documents
 
@@ -118,7 +118,7 @@ The UI screens were built on mock data (Phase 2). They need to be wired to the r
 
 ### Hero image alt text
 
-- [ ] Verify the `alt` attribute on the hero image (`/sinterview.jpg`) accurately describes the photo's content — current text assumes it shows a candidate
+- [ ] Verify the `alt` attribute on the hero image (`/ai-mock-interview-practice.jpg`) accurately describes the photo's content — current text assumes it shows a candidate
 
 ### Accessibility audit
 

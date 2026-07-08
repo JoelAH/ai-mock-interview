@@ -269,3 +269,32 @@
 .practiceBtn {
   padding: 0.7rem 2rem;
 }
+
+// ---- Abandoned session banner ----
+.abandonedBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--amber) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--amber) 30%, transparent);
+}
+
+.abandonedIcon {
+  color: var(--amber);
+  flex-shrink: 0;
+  margin-top: 0.2rem;
+  font-size: 1.5rem;
+}
+
+.abandonedTitle {
+  color: var(--text);
+  margin-bottom: 0.25rem;
+}
+
+.abandonedText {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}

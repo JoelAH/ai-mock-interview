@@ -4,15 +4,15 @@
 // =============================================================================
 
 export const SITE = {
-  name: 'Sinterview',
+  name: 'DevMockview',
   // Update to the production domain before launch; drives metadataBase,
   // canonical URLs, sitemap and structured data.
-  url: 'https://sinterview.app',
+  url: 'https://devmockview.app',
   tagline: 'Rehearse the real interview, out loud.',
   description:
-    'Sinterview is a voice-first AI interviewer for software engineers. Paste a job description, practice behavioral and system-design questions out loud, get adaptive follow-ups, and receive a scored report on exactly what to fix.',
+    'DevMockview is a voice-first AI interviewer for software engineers. Paste a job description, practice behavioral and system-design questions out loud, get adaptive follow-ups, and receive a scored report on exactly what to fix.',
   locale: 'en_US',
-  twitter: '@sinterview',
+  twitter: '@devmockview',
 } as const;
 
 // -----------------------------------------------------------------------------
@@ -22,12 +22,12 @@ export const SITE = {
 // -----------------------------------------------------------------------------
 export const LEGAL = {
   // The legal entity that operates the service (you / your company).
-  entity: 'Sinterview',
+  entity: 'DevMockview',
   // Where the operator is based — drives governing law / venue.
   governingLaw: '[Your State/Country, e.g. the State of Delaware, USA]',
   jurisdiction: '[Your county/court venue, e.g. New Castle County, Delaware]',
-  contactEmail: 'legal@sinterview.app',
-  privacyEmail: 'privacy@sinterview.app',
+  contactEmail: 'legal@devmockview.app',
+  privacyEmail: 'privacy@devmockview.app',
   // Update whenever you materially change either document.
   effectiveDate: 'February 1, 2025',
   // Bump when the voice-recording consent wording changes so prior consent can
@@ -160,8 +160,9 @@ export const PLANS: Plan[] = [
     cta: 'Choose Starter',
     featured: false,
     perks: [
-      '8 interviews / month',
+      '10 interviews / month',
       'Behavioral + architectural',
+      'Job-description tailoring',
       'Full scored reports + insights',
       'Progress trend over time',
     ],
@@ -179,7 +180,6 @@ export const PLANS: Plan[] = [
       'Job-description tailoring',
       'Full scored reports + insights',
       'Progress trend over time',
-      'Practice-this-gap-again sessions',
     ],
   },
   {
@@ -190,11 +190,11 @@ export const PLANS: Plan[] = [
     cta: 'Go Premium',
     featured: false,
     perks: [
-      '30 interviews / month',
+      '60 interviews / month',
       'Behavioral + architectural',
+      'Job-description tailoring',
       'Full scored reports + insights',
       'Progress trend over time',
-      'Practice-this-gap-again sessions',
       'Premium lifelike voice (coming soon)',
     ],
   },
@@ -209,7 +209,7 @@ export const FAQS: Faq[] = [
   },
   {
     q: 'Do I need to install anything?',
-    a: 'No. Sinterview runs entirely in your browser — just grant microphone access when prompted and you are in the room.',
+    a: 'No. DevMockview runs entirely in your browser — just grant microphone access when prompted and you are in the room.',
   },
   {
     q: 'What kinds of interviews can I practice?',

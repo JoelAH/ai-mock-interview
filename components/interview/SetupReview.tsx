@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
@@ -12,6 +12,7 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
+import CircularProgress from '@mui/material/CircularProgress';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import WorkIcon from '@mui/icons-material/Work';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
@@ -21,7 +22,6 @@ import TimerIcon from '@mui/icons-material/Timer';
 import CategoryIcon from '@mui/icons-material/Category';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import type { JdParseResponse } from '@/lib/schemas';
-import { mockJdParseResponse } from '@/lib/mock';
 import styles from './setup.module.scss';
 
 const INTERVIEW_TYPE_LABELS: Record<string, string> = {
@@ -34,15 +34,105 @@ const INTERVIEW_TYPE_LABELS: Record<string, string> = {
 export default function SetupReview() {
   const router = useRouter();
   const [data, setData] = useState<JdParseResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const hasCalledRef = useRef(false);
 
   useEffect(() => {
-    // In the mock phase, we always show mock data.
-    // When real services are wired (Task 14), this will read from
-    // an API call triggered by the JD input page.
-    setData(mockJdParseResponse);
+    if (hasCalledRef.current) return;
+    hasCalledRef.current = true;
+
+    const parseJd = async () => {
+      // Read the JD input stored by JdInput component
+      const stored = sessionStorage.getItem('jd-input');
+      if (!stored) {
+        setError('No job description found. Please go back and enter one.');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const payload = JSON.parse(stored);
+
+        // Build the JD text to send to the parser
+        let jdText = payload.jdText;
+
+        if (payload.sourceType === 'preset') {
+          // Build a synthetic JD with role-appropriate culture & focus areas
+          // so the LLM has meaningful context to extract from
+          jdText = buildPresetJdText(
+            payload.role ?? payload.jdText,
+            payload.level ?? 'Mid-level',
+            payload.tech ?? [],
+          );
+        }
+
+        // Call the JD parse API (which respects USE_MOCKS internally)
+        const response = await fetch('/api/jd/parse', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jdText,
+            sourceType: payload.sourceType,
+          }),
+        });
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err.error || `Request failed: ${response.status}`);
+        }
+
+        const result: JdParseResponse = await response.json();
+
+        // Store the session ID for the interview session to use
+        sessionStorage.setItem('session-id', result.sessionId);
+        setData(result);
+      } catch (err) {
+        console.error('[SetupReview] Parse error:', err);
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Failed to parse job description. Please try again.',
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    parseJd();
   }, []);
 
-  if (!data) return null;
+  if (loading) {
+    return (
+      <Box className={styles.page}>
+        <Paper className={styles.card} sx={{ textAlign: 'center', py: 6 }}>
+          <CircularProgress size={40} />
+          <Typography color="text.secondary" sx={{ mt: 2 }}>
+            Analyzing job description...
+          </Typography>
+        </Paper>
+      </Box>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <Box className={styles.page}>
+        <Paper className={styles.card} sx={{ textAlign: 'center', py: 4 }}>
+          <Typography color="error" gutterBottom>
+            {error ?? 'Something went wrong'}
+          </Typography>
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBackIcon />}
+            onClick={() => router.push('/interview/new')}
+          >
+            Go back
+          </Button>
+        </Paper>
+      </Box>
+    );
+  }
 
   const { parsedSignals, interviewType, estimatedMinutes } = data;
 
@@ -160,4 +250,58 @@ export default function SetupReview() {
       </Paper>
     </Box>
   );
+}
+
+// ---------------------------------------------------------------------------
+// Preset JD builder — generates a synthetic JD with role-appropriate
+// culture signals and focus areas so the LLM parser produces rich results.
+// ---------------------------------------------------------------------------
+
+/** Culture signals by seniority level */
+const CULTURE_BY_LEVEL: Record<string, string[]> = {
+  Junior: ['mentorship', 'growth-oriented', 'collaborative', 'learning culture'],
+  Intermediate: ['ownership', 'collaboration', 'continuous improvement', 'autonomy'],
+  Senior: ['ownership', 'technical leadership', 'mentoring', 'cross-team collaboration', 'high standards'],
+  Staff: ['technical vision', 'organizational influence', 'mentoring', 'strategic thinking', 'ownership'],
+};
+
+/** Focus areas by role */
+const FOCUS_BY_ROLE: Record<string, string[]> = {
+  'Frontend Engineer': ['UI/UX implementation', 'performance optimization', 'accessibility', 'component architecture'],
+  'Backend Engineer': ['API design', 'data modeling', 'scalability', 'reliability'],
+  'Full-Stack Engineer': ['end-to-end feature delivery', 'API design', 'frontend architecture', 'system integration'],
+  'Engineering Manager': ['team leadership', 'project delivery', 'hiring', 'technical strategy', 'stakeholder management'],
+  'DevOps / SRE': ['infrastructure automation', 'observability', 'incident response', 'CI/CD pipelines', 'reliability'],
+  'Platform Engineer': ['developer experience', 'infrastructure abstraction', 'scalability', 'service mesh', 'CI/CD'],
+  'QA Engineer': ['test strategy', 'automation frameworks', 'quality metrics', 'CI integration', 'regression testing'],
+};
+
+/** Senior+ levels get architecture and tradeoffs added to focus areas */
+const SENIOR_FOCUS_EXTRAS = ['architecture design', 'technical tradeoffs', 'system design'];
+
+function buildPresetJdText(role: string, level: string, tech: string[]): string {
+  const culture = CULTURE_BY_LEVEL[level] ?? CULTURE_BY_LEVEL['Intermediate'];
+  let focusAreas = FOCUS_BY_ROLE[role] ?? ['problem solving', 'code quality', 'collaboration'];
+
+  // Senior+ roles always include architecture/tradeoffs
+  if (['Senior', 'Staff'].includes(level)) {
+    focusAreas = [...focusAreas, ...SENIOR_FOCUS_EXTRAS.filter((f) => !focusAreas.includes(f))];
+  }
+
+  const lines = [
+    `Role: ${level} ${role}`,
+    `Seniority: ${level}`,
+    '',
+    `We are looking for a ${level} ${role} to join our team.`,
+    '',
+    `Culture and values: ${culture.join(', ')}.`,
+    '',
+    `Key focus areas: ${focusAreas.join(', ')}.`,
+  ];
+
+  if (tech.length > 0) {
+    lines.push('', `Required technologies: ${tech.join(', ')}.`);
+  }
+
+  return lines.join('\n');
 }

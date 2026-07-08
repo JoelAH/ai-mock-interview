@@ -9,7 +9,7 @@ export function Features() {
         <span className={styles.eyebrow}>What you get</span>
         <h2 className={styles.sectionTitle}>Built to feel like the room, not a quiz app.</h2>
         <p className={styles.sectionLede}>
-          Every part of Sinterview exists to recreate the pressure, pace, and feedback of a real
+          Every part of DevMockview exists to recreate the pressure, pace, and feedback of a real
           loop — so the actual day feels like one more rep.
         </p>
       </div>

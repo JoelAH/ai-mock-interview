@@ -98,7 +98,7 @@ export default function OpengraphImage() {
             />
           ))}
         </div>
-        <div style={{ display: 'flex', fontSize: '24px', color: '#79839a' }}>sinterview.app</div>
+        <div style={{ display: 'flex', fontSize: '24px', color: '#79839a' }}>devmockview.app</div>
       </div>
     </div>,
     { ...size },

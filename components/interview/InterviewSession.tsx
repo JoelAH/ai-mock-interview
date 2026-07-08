@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -11,92 +11,259 @@ import MicIcon from '@mui/icons-material/Mic';
 import StopIcon from '@mui/icons-material/Stop';
 import DoneIcon from '@mui/icons-material/Done';
 import CloseIcon from '@mui/icons-material/Close';
-import { mockQuestions } from '@/lib/mock';
+import { useTTS } from '@/hooks/useTTS';
+import { useSTT } from '@/hooks/useSTT';
 import styles from './session.module.scss';
 
 /**
  * Interview turn states:
- * - asking: interviewer is presenting the question (simulated TTS delay)
+ * - loading: fetching the first question from the API
+ * - asking: interviewer is presenting the question (TTS playback)
  * - listening: user is speaking (live transcript building)
- * - thinking: interviewer is processing (simulated LLM delay)
- * - done: all questions exhausted, session complete
+ * - thinking: interviewer is processing (API call in progress)
+ * - done: session complete
  */
-type TurnPhase = 'asking' | 'listening' | 'thinking' | 'done';
+type TurnPhase = 'loading' | 'asking' | 'listening' | 'thinking' | 'done';
 
-/** Simulated delay durations (ms) */
-const ASKING_DELAY = 2000;
-const THINKING_DELAY = 1500;
+/** Fallback timeout if TTS fails — ensures the interview can still proceed */
+const TTS_FALLBACK_TIMEOUT = 15000;
+
+interface CurrentQuestion {
+  text: string;
+  type: string;
+  isFollowUp: boolean;
+  order: number;
+}
+
+/** Format a question type string for display (e.g. 'follow_up' → 'Follow-up', 'architectural' → 'Architectural') */
+function formatQuestionType(type: string): string {
+  if (type === 'follow_up') return 'Follow-up';
+  return type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, ' ');
+}
 
 export default function InterviewSession() {
   const router = useRouter();
-  const [phase, setPhase] = useState<TurnPhase>('asking');
+  const [phase, setPhase] = useState<TurnPhase>('loading');
+  const [currentQuestion, setCurrentQuestion] = useState<CurrentQuestion | null>(null);
   const [questionIndex, setQuestionIndex] = useState(0);
+  const [questionsAsked, setQuestionsAsked] = useState(0); // actual count so far
   const [transcript, setTranscript] = useState('');
-  const [displayedTranscript, setDisplayedTranscript] = useState('');
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const transcriptRef = useRef('');
+  const phaseRef = useRef<TurnPhase>('loading');
 
-  const currentQuestion = mockQuestions[questionIndex];
-  const totalQuestions = mockQuestions.length;
-  const progress = ((questionIndex + (phase === 'done' ? 1 : 0)) / totalQuestions) * 100;
+  // Keep phaseRef in sync for use inside callbacks
+  phaseRef.current = phase;
 
-  // Simulate "asking" phase — auto-transition to listening after delay
-  useEffect(() => {
-    if (phase !== 'asking') return;
+  const progress = phase === 'done' ? 100 : 0; // no bar until done — question count is unpredictable
 
-    const timer = setTimeout(() => {
-      setPhase('listening');
-    }, ASKING_DELAY);
-
-    return () => clearTimeout(timer);
-  }, [phase, questionIndex]);
-
-  // Simulate live transcript building during listening
-  useEffect(() => {
-    if (phase !== 'listening') return;
-
-    const mockAnswer = currentQuestion.answerTranscript;
-    let charIndex = 0;
-    setDisplayedTranscript('');
-
-    const interval = setInterval(() => {
-      charIndex += 3;
-      if (charIndex >= mockAnswer.length) {
-        setDisplayedTranscript(mockAnswer);
-        clearInterval(interval);
-      } else {
-        setDisplayedTranscript(mockAnswer.slice(0, charIndex));
+  // ---- TTS hook: plays the question audio during "asking" phase ----
+  const { speak, stop: stopTTS } = useTTS({
+    onDone: () => {
+      // Only transition if we're still in the asking phase
+      if (phaseRef.current === 'asking') {
+        setPhase('listening');
+        setTranscript('');
+        transcriptRef.current = '';
+        sttRef.current?.start();
       }
-    }, 30);
+    },
+    onError: (err) => {
+      console.error('[InterviewSession] TTS error:', err);
+    },
+  });
 
-    return () => clearInterval(interval);
+  // ---- STT hook: captures speech during "listening" phase ----
+  const { start: startSTT, stop: stopSTT, getTranscript } = useSTT({
+    onTranscript: (text) => {
+      setTranscript(text);
+      transcriptRef.current = text;
+    },
+    onError: (err) => {
+      console.error('[InterviewSession] STT error:', err);
+    },
+  });
+
+  // Store STT methods in a ref so TTS onDone can call start
+  const sttRef = useRef({ start: startSTT, stop: stopSTT, getTranscript });
+  sttRef.current = { start: startSTT, stop: stopSTT, getTranscript };
+
+  // Load sessionId from sessionStorage on mount
+  useEffect(() => {
+    const stored = sessionStorage.getItem('session-id');
+    if (!stored) {
+      setError('No active session found. Please start a new interview.');
+      return;
+    }
+    setSessionId(stored);
+  }, []);
+
+  // Start the session — fetch the first question
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const startSession = async () => {
+      try {
+        const response = await fetch('/api/session/turn', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId, transcript: '__START__' }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to start session: ${response.status}`);
+        }
+
+        await processSSEResponse(response);
+      } catch (err) {
+        console.error('[InterviewSession] Failed to start:', err);
+        setError('Failed to start interview session. Please try again.');
+      }
+    };
+
+    startSession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId]);
+
+  // Process SSE streaming response from the turn API
+  const processSSEResponse = async (response: Response) => {
+    const reader = response.body?.getReader();
+    if (!reader) return;
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (!data) continue;
+
+        try {
+          const chunk = JSON.parse(data);
+
+          if (chunk.type === 'question') {
+            setQuestionsAsked((prev) => prev + 1);
+            setCurrentQuestion({
+              text: chunk.text,
+              type: chunk.questionType,
+              isFollowUp: chunk.isFollowUp,
+              order: chunk.questionOrder ?? questionIndex,
+            });
+            setPhase('asking');
+          } else if (chunk.type === 'decision' && chunk.action === 'end') {
+            setPhase('done');
+            return;
+          } else if (chunk.type === 'done') {
+            setQuestionIndex(chunk.questionOrder);
+          }
+        } catch {
+          // Skip malformed chunks
+        }
+      }
+    }
+  };
+
+  // Play question audio via TTS when entering "asking" phase
+  useEffect(() => {
+    if (phase !== 'asking' || !currentQuestion) return;
+
+    speak(currentQuestion.text);
+
+    // Fallback: if TTS takes too long, force transition
+    const fallback = setTimeout(() => {
+      if (phaseRef.current === 'asking') {
+        console.warn('[InterviewSession] TTS fallback timeout — moving to listening');
+        stopTTS();
+        setPhase('listening');
+        setTranscript('');
+        transcriptRef.current = '';
+        sttRef.current.start();
+      }
+    }, TTS_FALLBACK_TIMEOUT);
+
+    return () => {
+      clearTimeout(fallback);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, currentQuestion]);
 
-  const handleDoneAnswering = useCallback(() => {
-    setTranscript(currentQuestion.answerTranscript);
+  // Handle user finishing their answer
+  const handleDoneAnswering = useCallback(async () => {
+    if (!sessionId) return;
+
+    // Stop STT and capture final transcript
+    sttRef.current.stop();
+    const userTranscript = transcriptRef.current || transcript || '(no response)';
     setPhase('thinking');
 
-    // Simulate LLM thinking, then advance
-    setTimeout(() => {
-      const nextIndex = questionIndex + 1;
-      if (nextIndex >= totalQuestions) {
-        setPhase('done');
-      } else {
-        setQuestionIndex(nextIndex);
-        setTranscript('');
-        setDisplayedTranscript('');
-        setPhase('asking');
+    try {
+      const response = await fetch('/api/session/turn', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, transcript: userTranscript }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Turn API error: ${response.status}`);
       }
-    }, THINKING_DELAY);
-  }, [questionIndex, totalQuestions, currentQuestion]);
+
+      await processSSEResponse(response);
+    } catch (err) {
+      console.error('[InterviewSession] Turn error:', err);
+      setError('Something went wrong processing your answer. Please try again.');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, transcript]);
 
   const handleViewFeedback = () => {
-    router.push('/interview/feedback');
+    router.push(`/interview/feedback?sessionId=${sessionId}`);
   };
 
-  const handleEndInterview = () => {
-    // TODO: When wired to real backend, call API to mark session as 'abandoned'
-    // and count it toward usage. For now, redirect to dashboard.
+  const handleEndInterview = async () => {
+    // Stop any active audio
+    stopTTS();
+    sttRef.current.stop();
+
+    // Mark session as abandoned via API, then redirect to dashboard
+    if (sessionId) {
+      try {
+        await fetch('/api/session/turn', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId, transcript: '__ABANDON__' }),
+        });
+      } catch {
+        // Best-effort — still navigate away
+      }
+    }
     router.push('/dashboard');
   };
+
+  if (error) {
+    return (
+      <Box className={styles.page}>
+        <Box className={styles.container}>
+          <Typography variant="h6" color="error" sx={{ textAlign: 'center', mt: 4 }}>
+            {error}
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+            <Button variant="outlined" onClick={() => router.push('/interview/new')}>
+              Start over
+            </Button>
+          </Box>
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box className={styles.page}>
@@ -104,9 +271,9 @@ export default function InterviewSession() {
         {/* Progress header */}
         <Box className={styles.header} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="body2" color="text.secondary">
-            Question {Math.min(questionIndex + 1, totalQuestions)} of {totalQuestions}
+            Question {questionsAsked}
           </Typography>
-          {phase !== 'done' && (
+          {phase !== 'done' && phase !== 'loading' && (
             <Button
               variant="text"
               size="small"
@@ -120,7 +287,7 @@ export default function InterviewSession() {
           )}
           <LinearProgress
             variant="determinate"
-            value={progress}
+            value={Math.min(progress, 100)}
             className={styles.progressBar}
             aria-label="Interview progress"
           />
@@ -128,6 +295,12 @@ export default function InterviewSession() {
 
         {/* Main content area */}
         <Box className={styles.content}>
+          {phase === 'loading' && (
+            <Box sx={{ textAlign: 'center', py: 6 }}>
+              <Typography color="text.secondary">Preparing your interview...</Typography>
+            </Box>
+          )}
+
           {phase === 'done' ? (
             <Box className={styles.doneCard}>
               <DoneIcon className={styles.doneIcon} />
@@ -147,20 +320,19 @@ export default function InterviewSession() {
                 View feedback
               </Button>
             </Box>
-          ) : (
+          ) : currentQuestion && phase !== 'loading' ? (
             <>
               {/* Question display */}
               <Box className={styles.questionCard}>
                 <Box className={styles.questionMeta}>
+                  {/* Show the question type, formatted nicely. If it's a follow-up,
+                      the type IS "Follow-up" so we don't need a separate chip. */}
                   <Chip
-                    label={currentQuestion.type}
+                    label={formatQuestionType(currentQuestion.type)}
                     size="small"
                     color={currentQuestion.isFollowUp ? 'secondary' : 'default'}
-                    variant="outlined"
+                    variant={currentQuestion.isFollowUp ? 'filled' : 'outlined'}
                   />
-                  {currentQuestion.isFollowUp && (
-                    <Chip label="Follow-up" size="small" color="secondary" variant="filled" />
-                  )}
                 </Box>
                 <Typography variant="h6" className={styles.questionText}>
                   {currentQuestion.text}
@@ -196,7 +368,7 @@ export default function InterviewSession() {
                     Your answer
                   </Typography>
                   <Typography className={styles.transcriptText}>
-                    {phase === 'thinking' ? transcript : displayedTranscript}
+                    {transcript}
                     {phase === 'listening' && <span className={styles.cursor} />}
                   </Typography>
                 </Box>
@@ -218,7 +390,7 @@ export default function InterviewSession() {
                 </Box>
               )}
             </>
-          )}
+          ) : null}
         </Box>
       </Box>
     </Box>

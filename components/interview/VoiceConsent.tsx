@@ -13,7 +13,7 @@ export type ConsentResult = {
   at: string;
 };
 
-const STORAGE_KEY = 'sinterview.voiceConsent';
+const STORAGE_KEY = 'devmockview.voiceConsent';
 
 /**
  * Affirmative, unbundled microphone-recording consent gate. Required consent

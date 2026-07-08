@@ -91,12 +91,13 @@ export type SessionStatusResponse = z.infer<typeof sessionStatusResponseSchema>;
 
 export const feedbackReportResponseSchema = z.object({
   sessionId: z.string(),
-  overallScore: z.number().min(0).max(100),
-  technicalAccuracyScore: z.number().min(0).max(100),
-  communicationScore: z.number().min(0).max(100),
-  structureScore: z.number().min(0).max(100),
-  synthesizedInsight: z.string(),
-  diagnosis: z.string(),
+  abandoned: z.boolean(),
+  overallScore: z.number().min(0).max(100).nullable(),
+  technicalAccuracyScore: z.number().min(0).max(100).nullable(),
+  communicationScore: z.number().min(0).max(100).nullable(),
+  structureScore: z.number().min(0).max(100).nullable(),
+  synthesizedInsight: z.string().nullable(),
+  diagnosis: z.string().nullable(),
   questions: z.array(
     z.object({
       text: z.string(),

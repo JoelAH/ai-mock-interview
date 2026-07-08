@@ -28,6 +28,7 @@ export const sessionRepository = {
     return InterviewSession.countDocuments({
       userId,
       createdAt: { $gte: startOfMonth },
+      status: { $in: ['in_progress', 'completed', 'abandoned'] },
     });
   },
 

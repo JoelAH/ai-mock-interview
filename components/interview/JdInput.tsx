@@ -89,7 +89,13 @@ export default function JdInput() {
     // Store input in sessionStorage for the review page to pick up
     const payload = mode === 'paste'
       ? { sourceType: 'paste' as const, jdText: jdText.trim() }
-      : { sourceType: 'preset' as const, jdText: PRESETS[selectedPreset!].label, tech: techTags };
+      : {
+          sourceType: 'preset' as const,
+          jdText: PRESETS[selectedPreset!].label,
+          level: PRESETS[selectedPreset!].level,
+          role: PRESETS[selectedPreset!].role,
+          tech: techTags,
+        };
 
     sessionStorage.setItem('jd-input', JSON.stringify(payload));
     router.push('/interview/setup');
