@@ -26,10 +26,10 @@ export const LEGAL = {
   // Where the operator is based — drives governing law / venue.
   governingLaw: '[Your State/Country, e.g. the State of Delaware, USA]',
   jurisdiction: '[Your county/court venue, e.g. New Castle County, Delaware]',
-  contactEmail: 'legal@devmockview.app',
-  privacyEmail: 'privacy@devmockview.app',
+  contactEmail: 'admin@wimeki.com',
+  privacyEmail: 'admin@wimeki.com',
   // Update whenever you materially change either document.
-  effectiveDate: 'February 1, 2025',
+  effectiveDate: 'July 8, 2026',
   // Bump when the voice-recording consent wording changes so prior consent can
   // be re-collected. Stored alongside each captured consent.
   consentVersion: '2025-02-01',

@@ -16,8 +16,8 @@ have** can follow in the first few weeks.
 | `entity` | `DevMockview` | Your registered legal entity name (e.g. "DevMockview LLC") |
 | `governingLaw` | `[Your State/Country, e.g. the State of Delaware, USA]` | The actual jurisdiction whose laws govern your terms |
 | `jurisdiction` | `[Your county/court venue, e.g. New Castle County, Delaware]` | The venue for disputes / arbitration seat |
-| `contactEmail` | `legal@devmockview.app` | A monitored legal-contact address |
-| `privacyEmail` | `privacy@devmockview.app` | A monitored privacy-request address |
+| `contactEmail` | `admin@wimeki.com` | A monitored legal-contact address |
+| `privacyEmail` | `admin@wimeki.com` | A monitored privacy-request address |
 | `effectiveDate` | `February 1, 2025` | The date you actually publish the final versions |
 | `consentVersion` | `2025-02-01` | Update whenever the voice-consent wording changes |
 
