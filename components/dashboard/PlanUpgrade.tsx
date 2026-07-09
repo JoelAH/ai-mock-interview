@@ -42,7 +42,7 @@ export function PlanUpgrade({ currentTier, checkoutUrls, clerkUserId, appUrl }: 
     // Append clerk_user_id as custom data and redirect URL
     const separator = baseUrl.includes('?') ? '&' : '?';
     const redirectUrl = `${appUrl}/dashboard/upgrade-success`;
-    return `${baseUrl}${separator}checkout[custom][clerk_user_id]=${encodeURIComponent(clerkUserId)}&checkout[redirect_url]=${encodeURIComponent(redirectUrl)}`;
+    return `${baseUrl}${separator}checkout[custom][clerk_user_id]=${encodeURIComponent(clerkUserId)}&checkout[redirect_url]=${encodeURIComponent(redirectUrl)}&redirect_url=${encodeURIComponent(redirectUrl)}`;
   };
 
   return (
