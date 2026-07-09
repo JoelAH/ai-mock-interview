@@ -6,6 +6,7 @@ const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/api/webhooks(.*)', // Clerk & Lemon Squeezy webhooks
+  '/about',
   '/privacy',
   '/terms',
   '/mic-check',

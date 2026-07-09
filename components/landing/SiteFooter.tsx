@@ -17,7 +17,7 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
     links: [
       { label: 'About', href: '/about' },
       { label: 'Blog', href: '/' },
-      { label: 'Contact', href: '/' },
+      { label: 'Contact', href: 'mailto:admin@wimeki.com' },
     ],
   },
   {
