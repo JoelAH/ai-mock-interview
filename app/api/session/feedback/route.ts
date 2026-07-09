@@ -1,6 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { z } from 'zod';
 import { authService, feedbackService } from '@/lib/services';
+import { enforceRateLimit, RATE_LIMITS } from '@/lib/services/rateLimiter';
 
 /**
  * POST /api/session/feedback
@@ -28,6 +29,10 @@ export async function POST(request: Request) {
     return Response.json({ error: 'User not found' }, { status: 401 });
   }
 
+  // Rate limit
+  const rateLimited = await enforceRateLimit(RATE_LIMITS.sessionFeedback, clerkUserId);
+  if (rateLimited) return rateLimited;
+
   // 2. Parse and validate request body
   let body: unknown;
   try {
@@ -52,6 +57,9 @@ export async function POST(request: Request) {
     const report = await feedbackService.generateReport(userId, sessionId);
     return Response.json(report, { status: 200 });
   } catch (err) {
+    if (err instanceof Error && err.message.includes('Access denied')) {
+      return Response.json({ error: 'Session not found' }, { status: 403 });
+    }
     console.error('[POST /api/session/feedback] Service error:', err);
     return Response.json(
       { error: 'Failed to generate feedback report' },

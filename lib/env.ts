@@ -22,13 +22,26 @@ import 'server-only';
  * 2. If NODE_ENV is "test", default to true.
  * 3. If NODE_ENV is "production", default to false.
  * 4. Otherwise (development), default to true.
+ *
+ * Safety: In production, USE_MOCKS=true is forbidden — it would bypass
+ * webhook signature verification and other security checks.
  */
 export function useMocks(): boolean {
   const explicit = process.env.USE_MOCKS;
+  const env = process.env.NODE_ENV;
+
+  // Hard guard: never allow mock mode in production.
+  if (env === 'production' && explicit === 'true') {
+    throw new Error(
+      'FATAL: USE_MOCKS=true is not allowed in production. ' +
+        'This would bypass webhook signature verification and other security controls. ' +
+        'Remove USE_MOCKS from your production environment variables.',
+    );
+  }
+
   if (explicit === 'true') return true;
   if (explicit === 'false') return false;
 
-  const env = process.env.NODE_ENV;
   if (env === 'test') return true;
   if (env === 'production') return false;
 

@@ -2,7 +2,7 @@ import 'server-only';
 
 export { authService } from './authService';
 export { jdService, type IJdService } from './jdService';
-export { sessionService, type ISessionService } from './sessionService';
+export { sessionService, type ISessionService, SessionOwnershipError } from './sessionService';
 export { feedbackService, type IFeedbackService } from './feedbackService';
 export {
   billingService,

@@ -1,5 +1,6 @@
 import { auth } from '@clerk/nextjs/server';
 import { mintScopedToken } from '@/lib/integrations';
+import { enforceRateLimit, RATE_LIMITS } from '@/lib/services/rateLimiter';
 
 /**
  * POST /api/deepgram/token
@@ -17,15 +18,18 @@ export async function POST() {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // 2. Mint scoped token via the integration layer
+  // 2. Rate limit
+  const rateLimited = await enforceRateLimit(RATE_LIMITS.deepgramToken, userId);
+  if (rateLimited) return rateLimited;
+
+  // 3. Mint scoped token via the integration layer
   try {
     const tokenData = await mintScopedToken();
     return Response.json(tokenData, { status: 200 });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error('[POST /api/deepgram/token] Error minting token:', message);
+    console.error('[POST /api/deepgram/token] Error minting token:', err);
     return Response.json(
-      { error: 'Failed to generate transcription token', detail: message },
+      { error: 'Failed to generate transcription token' },
       { status: 500 },
     );
   }

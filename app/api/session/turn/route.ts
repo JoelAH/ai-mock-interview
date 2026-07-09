@@ -1,7 +1,8 @@
 import { auth } from '@clerk/nextjs/server';
 import { z } from 'zod';
-import { sessionTurnRequestSchema } from '@/lib/schemas';
-import { sessionService, authService } from '@/lib/services';
+import { sessionTurnRequestSchema, TRANSCRIPT_MAX_LENGTH } from '@/lib/schemas';
+import { sessionService, authService, SessionOwnershipError } from '@/lib/services';
+import { enforceRateLimit, RATE_LIMITS } from '@/lib/services/rateLimiter';
 
 /**
  * POST /api/session/turn
@@ -24,7 +25,7 @@ import { sessionService, authService } from '@/lib/services';
 
 const turnRequestSchema = z.object({
   sessionId: z.string().min(1),
-  transcript: z.string().min(1, 'Transcript cannot be empty'),
+  transcript: z.string().min(1, 'Transcript cannot be empty').max(TRANSCRIPT_MAX_LENGTH, `Transcript must be under ${TRANSCRIPT_MAX_LENGTH.toLocaleString()} characters`),
 });
 
 export async function POST(request: Request) {
@@ -38,6 +39,10 @@ export async function POST(request: Request) {
   if (!user) {
     return Response.json({ error: 'User not found' }, { status: 401 });
   }
+
+  // Rate limit
+  const rateLimited = await enforceRateLimit(RATE_LIMITS.sessionTurn, clerkUserId);
+  if (rateLimited) return rateLimited;
 
   // 2. Parse and validate request body
   let body: unknown;
@@ -63,8 +68,7 @@ export async function POST(request: Request) {
     // Start the session and return the opening question
     try {
       const result = await sessionService.start(userId, sessionId);
-      const encoder = new TextEncoder();
-      const stream = new ReadableStream({
+      const encoder = new TextEncoder();      const stream = new ReadableStream({
         start(controller) {
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({ type: 'decision', action: result.action })}\n\n`),
@@ -95,6 +99,9 @@ export async function POST(request: Request) {
         },
       });
     } catch (err) {
+      if (err instanceof SessionOwnershipError) {
+        return Response.json({ error: 'Session not found' }, { status: 403 });
+      }
       console.error('[POST /api/session/turn] Start error:', err);
       return Response.json({ error: 'Failed to start session' }, { status: 500 });
     }
@@ -106,6 +113,9 @@ export async function POST(request: Request) {
       await sessionService.abandon(userId, sessionId);
       return Response.json({ ok: true }, { status: 200 });
     } catch (err) {
+      if (err instanceof SessionOwnershipError) {
+        return Response.json({ error: 'Session not found' }, { status: 403 });
+      }
       console.error('[POST /api/session/turn] Abandon error:', err);
       return Response.json({ error: 'Failed to abandon session' }, { status: 500 });
     }
@@ -123,6 +133,12 @@ export async function POST(request: Request) {
         }
         controller.close();
       } catch (err) {
+        if (err instanceof SessionOwnershipError) {
+          const errorData = `data: ${JSON.stringify({ type: 'error', message: 'Session not found' })}\n\n`;
+          controller.enqueue(encoder.encode(errorData));
+          controller.close();
+          return;
+        }
         console.error('[POST /api/session/turn] Stream error:', err);
         const errorData = `data: ${JSON.stringify({ type: 'error', message: 'Internal server error' })}\n\n`;
         controller.enqueue(encoder.encode(errorData));

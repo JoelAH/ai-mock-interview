@@ -1,6 +1,8 @@
 import { auth } from '@clerk/nextjs/server';
 import { z } from 'zod';
 import { authService } from '@/lib/services';
+import { TTS_TEXT_MAX_LENGTH } from '@/lib/config/limits';
+import { enforceRateLimit, RATE_LIMITS } from '@/lib/services/rateLimiter';
 import { getTtsProvider } from '@/lib/integrations/tts';
 import { getTtsProviderForTier } from '@/lib/config/tiers';
 import type { SubscriptionTier } from '@/lib/config/tiers';
@@ -20,7 +22,7 @@ import type { SubscriptionTier } from '@/lib/config/tiers';
  */
 
 const ttsRequestSchema = z.object({
-  text: z.string().min(1, 'Text is required'),
+  text: z.string().min(1, 'Text is required').max(TTS_TEXT_MAX_LENGTH, `Text must be under ${TTS_TEXT_MAX_LENGTH.toLocaleString()} characters`),
 });
 
 export async function POST(request: Request) {
@@ -34,6 +36,10 @@ export async function POST(request: Request) {
   if (!user) {
     return Response.json({ error: 'User not found' }, { status: 401 });
   }
+
+  // Rate limit
+  const rateLimited = await enforceRateLimit(RATE_LIMITS.sessionTts, clerkUserId);
+  if (rateLimited) return rateLimited;
 
   // 2. Parse and validate request body
   let body: unknown;

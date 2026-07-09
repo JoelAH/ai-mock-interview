@@ -104,6 +104,12 @@ const realFeedbackService: IFeedbackService = {
   },
 
   async generateReport(userId: string, sessionId: string): Promise<FeedbackReportResponse> {
+    // Verify ownership before generating report
+    const session = await sessionRepository.findByIdAndUser(sessionId, userId);
+    if (!session) {
+      throw new Error(`Access denied: session ${sessionId} not found or not owned by user.`);
+    }
+
     // 1. Get all questions for this session
     const questions = await questionRepository.findBySessionId(sessionId);
 
@@ -112,8 +118,7 @@ const realFeedbackService: IFeedbackService = {
     }
 
     // 2. Check session status — abandoned sessions are not scored
-    const session = await sessionRepository.findById(sessionId);
-    const isAbandoned = session?.status === 'abandoned';
+    const isAbandoned = session.status === 'abandoned';
 
     if (isAbandoned) {
       return {
