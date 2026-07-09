@@ -38,10 +38,10 @@ export const LEGAL = {
 export type NavLink = { label: string; href: string };
 
 export const NAV_LINKS: NavLink[] = [
-  { label: 'How it works', href: '#how' },
-  { label: 'Features', href: '#features' },
-  { label: 'Pricing', href: '#pricing' },
-  { label: 'FAQ', href: '#faq' },
+  { label: 'How it works', href: '/#how' },
+  { label: 'Features', href: '/#features' },
+  { label: 'Pricing', href: '/#pricing' },
+  { label: 'FAQ', href: '/#faq' },
 ];
 
 export type Stat = { value: string; label: string };

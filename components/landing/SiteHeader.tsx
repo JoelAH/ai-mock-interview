@@ -11,7 +11,7 @@ export function SiteHeader() {
   return (
     <header className={styles.header}>
       <div className={styles.headerInner}>
-        <a href="#main" className={styles.brand} aria-label={`${SITE.name} home`}>
+        <a href="/" className={styles.brand} aria-label={`${SITE.name} home`}>
           <Logo />
           <span>
             {SITE.name}
