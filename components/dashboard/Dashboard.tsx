@@ -51,9 +51,11 @@ interface DashboardProps {
   checkoutUrls?: { starter: string | null; pro: string | null; premium: string | null };
   /** Clerk user ID for checkout custom data */
   clerkUserId?: string;
+  /** App base URL for redirect after checkout */
+  appUrl?: string;
 }
 
-export default function Dashboard({ userName, data, allowance, checkoutUrls, clerkUserId }: DashboardProps) {
+export default function Dashboard({ userName, data, allowance, checkoutUrls, clerkUserId, appUrl }: DashboardProps) {
   const router = useRouter();
   const { signOut } = useClerk();
   const sessions = data?.sessions ?? [];
@@ -135,11 +137,12 @@ export default function Dashboard({ userName, data, allowance, checkoutUrls, cle
         )}
 
         {/* Plan upgrade */}
-        {allowance && checkoutUrls && clerkUserId && allowance.tier !== 'premium' && (
+        {allowance && checkoutUrls && clerkUserId && appUrl && allowance.tier !== 'premium' && (
           <PlanUpgrade
             currentTier={allowance.tier}
             checkoutUrls={checkoutUrls}
             clerkUserId={clerkUserId}
+            appUrl={appUrl}
           />
         )}
 

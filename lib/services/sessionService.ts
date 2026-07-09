@@ -13,6 +13,7 @@ import { isMockMode } from '@/lib/env';
 import { llm } from '@/lib/llm';
 import type { LLMMessage } from '@/lib/llm';
 import { sessionRepository, questionRepository } from '@/lib/repositories';
+import { audit } from '@/lib/services/auditService';
 
 export interface ISessionService {
   /**
@@ -146,6 +147,14 @@ const realSessionService: ISessionService = {
     // Transition session to in_progress
     await sessionRepository.updateStatus(sessionId, 'in_progress');
 
+    audit({
+      source: 'system',
+      eventName: 'session_started',
+      payload: { userId, sessionId },
+      outcome: 'success',
+      note: `Interview session started`,
+    });
+
     // Build context for the first question
     const contextMessage = await buildContextMessage(sessionId);
 
@@ -236,6 +245,13 @@ const realSessionService: ISessionService = {
     // 6. If the LLM decided to end, mark session completed
     if (result.action === 'end') {
       await sessionRepository.updateStatus(sessionId, 'completed');
+      audit({
+        source: 'system',
+        eventName: 'session_completed',
+        payload: { userId, sessionId, totalQuestions: currentOrder + 1 },
+        outcome: 'success',
+        note: `Interview ended by LLM after ${currentOrder + 1} questions`,
+      });
     }
 
     return {
@@ -309,6 +325,13 @@ const realSessionService: ISessionService = {
 
     if (result.action === 'end') {
       await sessionRepository.updateStatus(sessionId, 'completed');
+      audit({
+        source: 'system',
+        eventName: 'session_completed',
+        payload: { userId, sessionId, totalQuestions: currentOrder + 1 },
+        outcome: 'success',
+        note: `Interview ended by LLM after ${currentOrder + 1} questions (stream)`,
+      });
     }
 
     yield { type: 'done' as const, questionOrder: currentOrder };
@@ -335,11 +358,25 @@ const realSessionService: ISessionService = {
   async end(userId: string, sessionId: string): Promise<void> {
     await assertSessionOwnership(userId, sessionId);
     await sessionRepository.updateStatus(sessionId, 'completed');
+    audit({
+      source: 'system',
+      eventName: 'session_completed',
+      payload: { userId, sessionId },
+      outcome: 'success',
+      note: `Interview session completed`,
+    });
   },
 
   async abandon(userId: string, sessionId: string): Promise<void> {
     await assertSessionOwnership(userId, sessionId);
     await sessionRepository.updateStatus(sessionId, 'abandoned');
+    audit({
+      source: 'system',
+      eventName: 'session_abandoned',
+      payload: { userId, sessionId },
+      outcome: 'success',
+      note: `Interview session abandoned early`,
+    });
   },
 };
 

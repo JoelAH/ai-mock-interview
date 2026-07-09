@@ -1,6 +1,7 @@
 import { Webhook } from 'svix';
 import { headers } from 'next/headers';
 import { userRepository } from '@/lib/repositories';
+import { audit } from '@/lib/services/auditService';
 
 /**
  * Clerk webhook handler — keeps the local `users` collection in sync.
@@ -69,14 +70,35 @@ export async function POST(request: Request) {
       await userRepository.upsertByClerkId(data.id, {
         email: primaryEmail?.email_address ?? '',
       });
+      await audit({
+        source: 'clerk',
+        eventName: type,
+        clerkUserId: data.id,
+        payload: { email: primaryEmail?.email_address ?? '' },
+        outcome: 'success',
+        note: `${type}: ${primaryEmail?.email_address ?? 'no email'}`,
+      });
       break;
     }
     case 'user.deleted': {
       await userRepository.deleteByClerkId(data.id);
+      await audit({
+        source: 'clerk',
+        eventName: type,
+        clerkUserId: data.id,
+        outcome: 'success',
+        note: `User deleted: ${data.id}`,
+      });
       break;
     }
     default:
-      // Ignore unhandled event types
+      await audit({
+        source: 'clerk',
+        eventName: type,
+        clerkUserId: data.id,
+        outcome: 'skipped',
+        note: `Unhandled event type: ${type}`,
+      });
       break;
   }
 

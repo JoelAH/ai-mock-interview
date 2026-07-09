@@ -2,6 +2,7 @@ import 'server-only';
 
 import { RateLimit } from '@/lib/models';
 import { dbConnect } from '@/lib/db';
+import { audit } from '@/lib/services/auditService';
 
 /**
  * Rate limiter backed by MongoDB.
@@ -139,6 +140,14 @@ export async function enforceRateLimit(
   const result = await checkRateLimit(config, identifier);
 
   if (!result.allowed) {
+    audit({
+      source: 'system',
+      eventName: 'rate_limit_hit',
+      payload: { route: config.route, identifier, used: result.used, limit: result.limit },
+      outcome: 'skipped',
+      note: `Rate limited on ${config.route}: ${result.used}/${result.limit}`,
+    });
+
     return new Response(
       JSON.stringify({
         error: 'Too many requests',

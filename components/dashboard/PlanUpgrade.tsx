@@ -15,6 +15,7 @@ interface PlanUpgradeProps {
     premium: string | null;
   };
   clerkUserId: string;
+  appUrl: string;
 }
 
 const PLANS = [
@@ -25,7 +26,7 @@ const PLANS = [
 
 const TIER_ORDER = ['free', 'starter', 'pro', 'premium'];
 
-export function PlanUpgrade({ currentTier, checkoutUrls, clerkUserId }: PlanUpgradeProps) {
+export function PlanUpgrade({ currentTier, checkoutUrls, clerkUserId, appUrl }: PlanUpgradeProps) {
   const currentTierIndex = TIER_ORDER.indexOf(currentTier);
 
   // Only show plans above the current tier
@@ -38,9 +39,10 @@ export function PlanUpgrade({ currentTier, checkoutUrls, clerkUserId }: PlanUpgr
   const buildCheckoutUrl = (tier: string): string | null => {
     const baseUrl = checkoutUrls[tier as keyof typeof checkoutUrls];
     if (!baseUrl) return null;
-    // Append clerk_user_id as custom data for the webhook to map back
+    // Append clerk_user_id as custom data and redirect URL
     const separator = baseUrl.includes('?') ? '&' : '?';
-    return `${baseUrl}${separator}checkout[custom][clerk_user_id]=${encodeURIComponent(clerkUserId)}`;
+    const redirectUrl = `${appUrl}/dashboard/upgrade-success`;
+    return `${baseUrl}${separator}checkout[custom][clerk_user_id]=${encodeURIComponent(clerkUserId)}&checkout[redirect_url]=${encodeURIComponent(redirectUrl)}`;
   };
 
   return (

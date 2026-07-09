@@ -24,6 +24,7 @@ import {
   sessionRepository,
   feedbackRepository,
 } from '@/lib/repositories';
+import { audit } from '@/lib/services/auditService';
 
 export interface IFeedbackService {
   /**
@@ -201,6 +202,21 @@ const realFeedbackService: IFeedbackService = {
 
     // 7. Update session's overall score
     await sessionRepository.setOverallScore(sessionId, result.overallScore);
+
+    audit({
+      source: 'system',
+      eventName: 'feedback_report_generated',
+      payload: {
+        userId,
+        sessionId,
+        overallScore: result.overallScore,
+        technicalAccuracyScore: result.technicalAccuracyScore,
+        communicationScore: result.communicationScore,
+        structureScore: result.structureScore,
+      },
+      outcome: 'success',
+      note: `Feedback generated — overall score: ${result.overallScore}`,
+    });
 
     // 8. Build and return the full response (includes per-question breakdown)
     return {

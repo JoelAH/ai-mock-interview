@@ -1,5 +1,6 @@
 import { verifyAndParseWebhook } from '@/lib/integrations';
 import { billingService } from '@/lib/services';
+import { audit } from '@/lib/services/auditService';
 
 /**
  * POST /api/webhooks/lemonsqueezy
@@ -20,22 +21,67 @@ export async function POST(request: Request) {
   const rawBody = await request.text();
   const signature = request.headers.get('x-signature');
 
+  console.log('[LemonSqueezy Webhook] Received event, body length:', rawBody.length);
+
   // 2. Verify signature and parse
   let event;
   try {
     event = await verifyAndParseWebhook(rawBody, signature);
   } catch (err) {
-    console.error('[POST /api/webhooks/lemonsqueezy] Verification failed:', err);
+    console.error('[LemonSqueezy Webhook] Verification failed:', err);
+    await audit({
+      source: 'lemonsqueezy',
+      eventName: 'verification_failed',
+      outcome: 'error',
+      note: `Signature verification failed: ${err instanceof Error ? err.message : String(err)}`,
+    });
     return new Response('Invalid signature', { status: 401 });
   }
+
+  const clerkUserId =
+    (event.data.attributes.custom_data as { clerk_user_id?: string } | undefined)?.clerk_user_id ?? null;
+
+  console.log('[LemonSqueezy Webhook] Event verified:', {
+    eventName: event.eventName,
+    subscriptionId: event.data.id,
+    variantId: event.data.attributes.variant_id,
+    status: event.data.attributes.status,
+    customData: event.data.attributes.custom_data,
+    clerkUserId: clerkUserId ?? 'MISSING',
+  });
 
   // 3. Delegate to billing service
   try {
     await billingService.handleWebhookEvent(event);
+    await audit({
+      source: 'lemonsqueezy',
+      eventName: event.eventName,
+      clerkUserId,
+      payload: {
+        subscriptionId: event.data.id,
+        variantId: event.data.attributes.variant_id,
+        status: event.data.attributes.status,
+        customerId: event.data.attributes.customer_id,
+      },
+      outcome: 'success',
+      note: `Processed ${event.eventName} — variant ${event.data.attributes.variant_id}, status ${event.data.attributes.status}`,
+    });
+    console.log('[LemonSqueezy Webhook] Event handled successfully');
   } catch (err) {
-    console.error('[POST /api/webhooks/lemonsqueezy] Handler error:', err);
-    // Still return 200 to avoid infinite retries for unexpected errors.
-    // The error is logged for investigation.
+    console.error('[LemonSqueezy Webhook] Handler error:', err);
+    await audit({
+      source: 'lemonsqueezy',
+      eventName: event.eventName,
+      clerkUserId,
+      payload: {
+        subscriptionId: event.data.id,
+        variantId: event.data.attributes.variant_id,
+        status: event.data.attributes.status,
+        customerId: event.data.attributes.customer_id,
+      },
+      outcome: 'error',
+      note: `Handler error: ${err instanceof Error ? err.message : String(err)}`,
+    });
   }
 
   return new Response('OK', { status: 200 });
