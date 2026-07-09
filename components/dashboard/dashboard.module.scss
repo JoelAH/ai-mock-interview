@@ -195,3 +195,47 @@
 .emptyTitle {
   font-weight: 600;
 }
+
+// =============================================================================
+// Plan Upgrade section
+// =============================================================================
+
+.upgradeSection {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface, rgba(255, 255, 255, 0.02));
+}
+
+.upgradeHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.upgradePlans {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.upgradePlan {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: border-color 0.15s ease;
+
+  &:hover {
+    border-color: var(--teal);
+  }
+}
+
+.upgradePlanFeatured {
+  border-color: var(--amber);
+  background: rgba(255, 182, 97, 0.04);
+}

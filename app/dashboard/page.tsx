@@ -34,11 +34,19 @@ export default async function DashboardPage() {
     }
   }
 
+  const checkoutUrls = {
+    starter: process.env.NEXT_PUBLIC_LEMONSQUEEZY_CHECKOUT_STARTER ?? null,
+    pro: process.env.NEXT_PUBLIC_LEMONSQUEEZY_CHECKOUT_PRO ?? null,
+    premium: process.env.NEXT_PUBLIC_LEMONSQUEEZY_CHECKOUT_PREMIUM ?? null,
+  };
+
   return (
     <Dashboard
       userName={user?.firstName ?? undefined}
       data={dashboardData}
       allowance={allowance}
+      checkoutUrls={checkoutUrls}
+      clerkUserId={clerkUserId ?? undefined}
     />
   );
 }
