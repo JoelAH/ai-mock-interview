@@ -141,14 +141,6 @@ export const billingService: IBillingService = {
     const variantId = attrs.variant_id != null ? String(attrs.variant_id) : '';
     const resolvedTier = variantId ? resolveTierFromVariantId(variantId) : null;
 
-    console.log('[BillingService] Processing webhook:', {
-      eventName: event.eventName,
-      lemonStatus: attrs.status,
-      mappedStatus: status,
-      variantId,
-      resolvedTier,
-    });
-
     // The webhook payload identifies the customer; we key our users on the
     // clerkUserId stored in custom checkout data (user_email is a fallback).
     let clerkUserId =
@@ -170,12 +162,10 @@ export const billingService: IBillingService = {
 
       if (user) {
         clerkUserId = (user as { clerkUserId?: string }).clerkUserId ?? null;
-        console.log('[BillingService] Resolved user via fallback lookup:', { clerkUserId, subscriptionId, lemonCustomerId });
       }
     }
 
     if (!clerkUserId) {
-      console.warn('[BillingService] Could not resolve user — no clerk_user_id, no matching subscriptionId or customerId. Skipping.');
       return;
     }
 
@@ -193,10 +183,6 @@ export const billingService: IBillingService = {
       fields.subscriptionTier = resolvedTier;
     }
 
-    console.log('[BillingService] Updating user subscription:', { clerkUserId, fields });
-
     await userRepository.updateSubscription(clerkUserId, fields);
-
-    console.log('[BillingService] User subscription updated successfully for:', clerkUserId);
   },
 };
