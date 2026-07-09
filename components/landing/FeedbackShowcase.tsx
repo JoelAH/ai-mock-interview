@@ -13,8 +13,8 @@ const HIGHLIGHTS = [
     body: 'Expand any answer to see what landed and what slipped, colour-coded by score.',
   },
   {
-    title: 'Practice this gap again.',
-    body: 'One tap spins up a fresh session weighted toward the exact thing you fumbled.',
+    title: 'Track your progress.',
+    body: 'See your scores trend over time and know exactly where you\u2019re improving.',
   },
 ];
 
