@@ -13,6 +13,7 @@ import { isMockMode } from '@/lib/env';
 import { llm } from '@/lib/llm';
 import type { LLMMessage } from '@/lib/llm';
 import { sessionRepository, questionRepository } from '@/lib/repositories';
+import { audit } from '@/lib/services/auditService';
 
 export interface ISessionService {
   /**
@@ -116,13 +117,43 @@ async function buildContextMessage(sessionId: string): Promise<string> {
 }
 
 // ---------------------------------------------------------------------------
+// Ownership guard — ensures the session belongs to the requesting user.
+// ---------------------------------------------------------------------------
+
+async function assertSessionOwnership(userId: string, sessionId: string): Promise<void> {
+  const session = await sessionRepository.findByIdAndUser(sessionId, userId);
+  if (!session) {
+    throw new SessionOwnershipError(sessionId);
+  }
+}
+
+/** Thrown when a user attempts to access a session they don't own. */
+export class SessionOwnershipError extends Error {
+  constructor(sessionId: string) {
+    super(`Access denied: session ${sessionId} not found or not owned by user.`);
+    this.name = 'SessionOwnershipError';
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Real implementation
 // ---------------------------------------------------------------------------
 
 const realSessionService: ISessionService = {
   async start(userId: string, sessionId: string): Promise<SessionTurnResponse> {
+    // Verify ownership before proceeding
+    await assertSessionOwnership(userId, sessionId);
+
     // Transition session to in_progress
     await sessionRepository.updateStatus(sessionId, 'in_progress');
+
+    audit({
+      source: 'system',
+      eventName: 'session_started',
+      payload: { userId, sessionId },
+      outcome: 'success',
+      note: `Interview session started`,
+    });
 
     // Build context for the first question
     const contextMessage = await buildContextMessage(sessionId);
@@ -163,6 +194,9 @@ const realSessionService: ISessionService = {
   },
 
   async processTurn(userId: string, sessionId: string, transcript: string): Promise<SessionTurnResponse> {
+    // Verify ownership before proceeding
+    await assertSessionOwnership(userId, sessionId);
+
     // 1. Get current question count to determine order
     const existingQuestions = await questionRepository.findBySessionId(sessionId);
     const currentOrder = existingQuestions.length;
@@ -211,6 +245,13 @@ const realSessionService: ISessionService = {
     // 6. If the LLM decided to end, mark session completed
     if (result.action === 'end') {
       await sessionRepository.updateStatus(sessionId, 'completed');
+      audit({
+        source: 'system',
+        eventName: 'session_completed',
+        payload: { userId, sessionId, totalQuestions: currentOrder + 1 },
+        outcome: 'success',
+        note: `Interview ended by LLM after ${currentOrder + 1} questions`,
+      });
     }
 
     return {
@@ -223,6 +264,9 @@ const realSessionService: ISessionService = {
   },
 
   async *processTurnStream(userId: string, sessionId: string, transcript: string): AsyncIterable<TurnChunk> {
+    // Verify ownership before proceeding
+    await assertSessionOwnership(userId, sessionId);
+
     // The streaming variant uses the same logic as processTurn but yields chunks
     // as they become available. For structured output, we get the full result then
     // emit chunks in order (decision → question → done). True token-level streaming
@@ -281,15 +325,23 @@ const realSessionService: ISessionService = {
 
     if (result.action === 'end') {
       await sessionRepository.updateStatus(sessionId, 'completed');
+      audit({
+        source: 'system',
+        eventName: 'session_completed',
+        payload: { userId, sessionId, totalQuestions: currentOrder + 1 },
+        outcome: 'success',
+        note: `Interview ended by LLM after ${currentOrder + 1} questions (stream)`,
+      });
     }
 
     yield { type: 'done' as const, questionOrder: currentOrder };
   },
 
   async getStatus(userId: string, sessionId: string): Promise<SessionStatusResponse> {
-    const session = await sessionRepository.findById(sessionId);
+    // Verify ownership — uses findByIdAndUser instead of findById
+    const session = await sessionRepository.findByIdAndUser(sessionId, userId);
     if (!session) {
-      throw new Error(`Session ${sessionId} not found.`);
+      throw new SessionOwnershipError(sessionId);
     }
 
     const questions = await questionRepository.findBySessionId(sessionId);
@@ -304,11 +356,27 @@ const realSessionService: ISessionService = {
   },
 
   async end(userId: string, sessionId: string): Promise<void> {
+    await assertSessionOwnership(userId, sessionId);
     await sessionRepository.updateStatus(sessionId, 'completed');
+    audit({
+      source: 'system',
+      eventName: 'session_completed',
+      payload: { userId, sessionId },
+      outcome: 'success',
+      note: `Interview session completed`,
+    });
   },
 
   async abandon(userId: string, sessionId: string): Promise<void> {
+    await assertSessionOwnership(userId, sessionId);
     await sessionRepository.updateStatus(sessionId, 'abandoned');
+    audit({
+      source: 'system',
+      eventName: 'session_abandoned',
+      payload: { userId, sessionId },
+      outcome: 'success',
+      note: `Interview session abandoned early`,
+    });
   },
 };
 

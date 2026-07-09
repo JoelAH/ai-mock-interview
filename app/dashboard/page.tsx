@@ -4,6 +4,7 @@ import { auth } from '@clerk/nextjs/server';
 import { Dashboard } from '@/components/dashboard';
 import { feedbackService, billingService } from '@/lib/services';
 import { authService } from '@/lib/services';
+import { SITE } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -34,11 +35,24 @@ export default async function DashboardPage() {
     }
   }
 
+  const checkoutUrls = {
+    starter: process.env.NEXT_PUBLIC_LEMONSQUEEZY_CHECKOUT_STARTER ?? null,
+    pro: process.env.NEXT_PUBLIC_LEMONSQUEEZY_CHECKOUT_PRO ?? null,
+    premium: process.env.NEXT_PUBLIC_LEMONSQUEEZY_CHECKOUT_PREMIUM ?? null,
+  };
+
+  const appUrl = process.env.NODE_ENV === 'production'
+    ? SITE.url
+    : 'http://localhost:3000';
+
   return (
     <Dashboard
       userName={user?.firstName ?? undefined}
       data={dashboardData}
       allowance={allowance}
+      checkoutUrls={checkoutUrls}
+      clerkUserId={clerkUserId ?? undefined}
+      appUrl={appUrl}
     />
   );
 }

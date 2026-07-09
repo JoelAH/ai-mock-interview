@@ -15,6 +15,7 @@ import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import type { DashboardResponse, SessionSummary } from '@/lib/schemas';
 import type { SessionAllowance } from '@/lib/services/billingService';
+import { PlanUpgrade } from './PlanUpgrade';
 import { ScoreTrendChart } from './ScoreTrendChart';
 import styles from './dashboard.module.scss';
 
@@ -46,9 +47,15 @@ interface DashboardProps {
   data?: DashboardResponse | null;
   /** Session allowance info (tier, used, remaining) */
   allowance?: SessionAllowance | null;
+  /** Lemon Squeezy checkout URLs per tier */
+  checkoutUrls?: { starter: string | null; pro: string | null; premium: string | null };
+  /** Clerk user ID for checkout custom data */
+  clerkUserId?: string;
+  /** App base URL for redirect after checkout */
+  appUrl?: string;
 }
 
-export default function Dashboard({ userName, data, allowance }: DashboardProps) {
+export default function Dashboard({ userName, data, allowance, checkoutUrls, clerkUserId, appUrl }: DashboardProps) {
   const router = useRouter();
   const { signOut } = useClerk();
   const sessions = data?.sessions ?? [];
@@ -127,6 +134,16 @@ export default function Dashboard({ userName, data, allowance }: DashboardProps)
                 : `${allowance.remaining} session${allowance.remaining !== 1 ? 's' : ''} remaining this month (${allowance.used}/${allowance.limit} used)`}
             </Typography>
           </Box>
+        )}
+
+        {/* Plan upgrade */}
+        {allowance && checkoutUrls && clerkUserId && appUrl && allowance.tier !== 'premium' && (
+          <PlanUpgrade
+            currentTier={allowance.tier}
+            checkoutUrls={checkoutUrls}
+            clerkUserId={clerkUserId}
+            appUrl={appUrl}
+          />
         )}
 
         {/* Stats + Trend */}

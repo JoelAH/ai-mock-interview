@@ -18,10 +18,48 @@ export interface LemonSqueezyEvent {
       customer_id: number;
       variant_id: number;
       status: string;
-      user_email: string;
+      user_email?: string;
       custom_data?: { clerk_user_id?: string } | null;
       [key: string]: unknown;
     };
+  };
+}
+
+/** Raw Lemon Squeezy webhook payload shape */
+interface RawLemonSqueezyPayload {
+  meta: {
+    event_name: string;
+    custom_data?: { clerk_user_id?: string } | null;
+    [key: string]: unknown;
+  };
+  data: {
+    id: string;
+    attributes: {
+      customer_id: number;
+      variant_id: number;
+      status: string;
+      user_email?: string;
+      [key: string]: unknown;
+    };
+  };
+}
+
+/**
+ * Normalizes the raw Lemon Squeezy payload into our internal event shape.
+ * Lemon Squeezy puts event_name and custom_data in `meta`, not in `data.attributes`.
+ */
+function normalizePayload(raw: RawLemonSqueezyPayload): LemonSqueezyEvent {
+  return {
+    eventName: raw.meta.event_name,
+    data: {
+      id: raw.data.id,
+      attributes: {
+        ...raw.data.attributes,
+        // Hoist custom_data from meta into attributes so the billing service
+        // can access it without knowing about the meta structure.
+        custom_data: raw.meta.custom_data ?? raw.data.attributes.custom_data ?? null,
+      },
+    },
   };
 }
 
@@ -58,7 +96,8 @@ export async function verifyAndParseWebhook(
 ): Promise<LemonSqueezyEvent> {
   if (isMockMode()) {
     // Skip signature verification in mock mode — just parse the JSON.
-    return JSON.parse(rawBody) as LemonSqueezyEvent;
+    const raw = JSON.parse(rawBody) as RawLemonSqueezyPayload;
+    return normalizePayload(raw);
   }
 
   const secret = requireEnv('LEMONSQUEEZY_WEBHOOK_SECRET');
@@ -72,5 +111,6 @@ export async function verifyAndParseWebhook(
     throw new Error('Invalid webhook signature — payload may have been tampered with.');
   }
 
-  return JSON.parse(rawBody) as LemonSqueezyEvent;
+  const raw = JSON.parse(rawBody) as RawLemonSqueezyPayload;
+  return normalizePayload(raw);
 }

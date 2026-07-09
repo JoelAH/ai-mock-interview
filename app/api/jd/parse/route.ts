@@ -1,6 +1,8 @@
 import { auth } from '@clerk/nextjs/server';
 import { jdParseRequestSchema } from '@/lib/schemas';
 import { jdService, authService, billingService } from '@/lib/services';
+import { enforceRateLimit, RATE_LIMITS } from '@/lib/services/rateLimiter';
+import { audit } from '@/lib/services/auditService';
 
 /**
  * POST /api/jd/parse
@@ -22,9 +24,21 @@ export async function POST(request: Request) {
     return Response.json({ error: 'User not found' }, { status: 401 });
   }
 
+  // 1b. Rate limit
+  const rateLimited = await enforceRateLimit(RATE_LIMITS.jdParse, clerkUserId);
+  if (rateLimited) return rateLimited;
+
   // 2. Enforce session cap — check billing allowance before creating anything.
   const allowance = await billingService.canCreateSession(clerkUserId);
   if (!allowance.allowed) {
+    audit({
+      source: 'system',
+      eventName: 'session_cap_blocked',
+      clerkUserId,
+      payload: { tier: allowance.tier, used: allowance.used, limit: allowance.limit },
+      outcome: 'skipped',
+      note: `Session creation blocked: ${allowance.used}/${allowance.limit} on ${allowance.tier} tier`,
+    });
     return Response.json(
       {
         error: 'Session limit reached',

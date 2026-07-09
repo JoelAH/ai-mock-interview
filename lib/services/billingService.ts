@@ -15,6 +15,7 @@ import {
 } from '@/lib/config/tiers';
 import type { LemonSqueezyEvent } from '@/lib/integrations';
 import type { SubscriptionStatus } from '@/lib/schemas';
+import { audit } from '@/lib/services/auditService';
 
 /** Statuses that grant access to create sessions. */
 const ACTIVE_STATUSES = new Set(['active', 'trialing']);
@@ -142,11 +143,29 @@ export const billingService: IBillingService = {
 
     // The webhook payload identifies the customer; we key our users on the
     // clerkUserId stored in custom checkout data (user_email is a fallback).
-    const clerkUserId =
+    let clerkUserId =
       (attrs.custom_data as { clerk_user_id?: string } | undefined)?.clerk_user_id ?? null;
 
+    // Fallback: on lifecycle events (cancel, update, renew) custom_data is often
+    // absent. Look up the user by subscriptionId or lemonCustomerId instead.
     if (!clerkUserId) {
-      // Without a clerkUserId we can't map to a local user; nothing to sync.
+      const subscriptionId = event.data.id;
+      const lemonCustomerId = attrs.customer_id != null ? String(attrs.customer_id) : null;
+
+      let user = subscriptionId
+        ? await userRepository.findBySubscriptionId(subscriptionId)
+        : null;
+
+      if (!user && lemonCustomerId) {
+        user = await userRepository.findByLemonCustomerId(lemonCustomerId);
+      }
+
+      if (user) {
+        clerkUserId = (user as { clerkUserId?: string }).clerkUserId ?? null;
+      }
+    }
+
+    if (!clerkUserId) {
       return;
     }
 

@@ -7,23 +7,23 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
   {
     title: 'Product',
     links: [
-      { label: 'How it works', href: '#how' },
-      { label: 'Features', href: '#features' },
-      { label: 'Pricing', href: '#pricing' },
+      { label: 'How it works', href: '/#how' },
+      { label: 'Features', href: '/#features' },
+      { label: 'Pricing', href: '/#pricing' },
     ],
   },
   {
     title: 'Company',
     links: [
-      { label: 'About', href: '#' },
-      { label: 'Blog', href: '#' },
-      { label: 'Contact', href: '#' },
+      { label: 'About', href: '/about' },
+      { label: 'Blog', href: '/blog' },
+      { label: 'Contact', href: 'mailto:admin@wimeki.com' },
     ],
   },
   {
     title: 'Legal',
     links: [
-      { label: 'FAQ', href: '#faq' },
+      { label: 'FAQ', href: '/#faq' },
       { label: 'Privacy', href: '/privacy' },
       { label: 'Terms', href: '/terms' },
     ],

@@ -12,6 +12,7 @@ import Chip from '@mui/material/Chip';
 import Paper from '@mui/material/Paper';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
+import { JD_TEXT_MAX_LENGTH } from '@/lib/config/limits';
 import styles from './setup.module.scss';
 
 const PRESETS = [
@@ -78,6 +79,10 @@ export default function JdInput() {
         setError('Job description seems too short. Please paste the full text.');
         return;
       }
+      if (jdText.length > JD_TEXT_MAX_LENGTH) {
+        setError(`Job description is too long. Please keep it under ${JD_TEXT_MAX_LENGTH.toLocaleString()} characters.`);
+        return;
+      }
     } else {
       if (selectedPreset === null) {
         setError('Please select a role preset to continue.');
@@ -137,11 +142,18 @@ export default function JdInput() {
             placeholder="Paste the full job description here..."
             value={jdText}
             onChange={(e) => {
-              setJdText(e.target.value);
+              const value = e.target.value;
+              if (value.length <= JD_TEXT_MAX_LENGTH) {
+                setJdText(value);
+              }
               if (error) setError('');
             }}
             error={!!error && mode === 'paste'}
-            helperText={mode === 'paste' ? error : ''}
+            helperText={
+              mode === 'paste'
+                ? error || `${jdText.length.toLocaleString()} / ${JD_TEXT_MAX_LENGTH.toLocaleString()} characters`
+                : ''
+            }
             className={styles.textarea}
             slotProps={{ input: { 'aria-label': 'Job description text' } }}
           />

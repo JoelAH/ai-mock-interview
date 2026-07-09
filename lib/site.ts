@@ -26,10 +26,10 @@ export const LEGAL = {
   // Where the operator is based — drives governing law / venue.
   governingLaw: '[Your State/Country, e.g. the State of Delaware, USA]',
   jurisdiction: '[Your county/court venue, e.g. New Castle County, Delaware]',
-  contactEmail: 'legal@devmockview.app',
-  privacyEmail: 'privacy@devmockview.app',
+  contactEmail: 'admin@wimeki.com',
+  privacyEmail: 'admin@wimeki.com',
   // Update whenever you materially change either document.
-  effectiveDate: 'February 1, 2025',
+  effectiveDate: 'July 8, 2026',
   // Bump when the voice-recording consent wording changes so prior consent can
   // be re-collected. Stored alongside each captured consent.
   consentVersion: '2025-02-01',
@@ -38,19 +38,19 @@ export const LEGAL = {
 export type NavLink = { label: string; href: string };
 
 export const NAV_LINKS: NavLink[] = [
-  { label: 'How it works', href: '#how' },
-  { label: 'Features', href: '#features' },
-  { label: 'Pricing', href: '#pricing' },
-  { label: 'FAQ', href: '#faq' },
+  { label: 'How it works', href: '/#how' },
+  { label: 'Features', href: '/#features' },
+  { label: 'Pricing', href: '/#pricing' },
+  { label: 'FAQ', href: '/#faq' },
 ];
 
 export type Stat = { value: string; label: string };
 
 export const STATS: Stat[] = [
-  { value: '<3s', label: 'voice response, so it feels like a real conversation' },
+  { value: '0', label: 'typing — it\u2019s a real voice conversation' },
   { value: '100%', label: 'tailored to the job description you paste in' },
   { value: '3', label: 'scored dimensions on every answer you give' },
-  { value: '\u221E', label: 'reps, on your own schedule, judgment-free' },
+  { value: '24/7', label: 'practice anytime, no one watching' },
 ];
 
 export type Step = { n: string; title: string; body: string };

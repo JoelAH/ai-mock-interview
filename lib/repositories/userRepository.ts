@@ -8,6 +8,16 @@ export const userRepository = {
     return User.findOne({ clerkUserId }).lean();
   },
 
+  async findBySubscriptionId(subscriptionId: string) {
+    await dbConnect();
+    return User.findOne({ subscriptionId }).lean();
+  },
+
+  async findByLemonCustomerId(lemonCustomerId: string) {
+    await dbConnect();
+    return User.findOne({ lemonCustomerId }).lean();
+  },
+
   async upsertByClerkId(clerkUserId: string, data: Partial<UserDTO>) {
     await dbConnect();
     return User.findOneAndUpdate(

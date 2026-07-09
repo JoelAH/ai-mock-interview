@@ -10,13 +10,17 @@ import {
   parsedSignalsSchema,
 } from './interviewSession';
 import { questionTypeEnum, questionScoresSchema } from './interviewQuestion';
+import { JD_TEXT_MAX_LENGTH, TRANSCRIPT_MAX_LENGTH, TTS_TEXT_MAX_LENGTH } from '@/lib/config/limits';
+
+// Re-export limits so consumers importing from @/lib/schemas get them too.
+export { JD_TEXT_MAX_LENGTH, TRANSCRIPT_MAX_LENGTH, TTS_TEXT_MAX_LENGTH } from '@/lib/config/limits';
 
 // ---------------------------------------------------------------------------
 // JD Parse
 // ---------------------------------------------------------------------------
 
 export const jdParseRequestSchema = z.object({
-  jdText: z.string().min(1, 'Job description text is required'),
+  jdText: z.string().min(1, 'Job description text is required').max(JD_TEXT_MAX_LENGTH, `Job description must be under ${JD_TEXT_MAX_LENGTH.toLocaleString()} characters`),
   sourceType: sourceTypeEnum,
 });
 export type JdParseRequest = z.infer<typeof jdParseRequestSchema>;
@@ -35,7 +39,7 @@ export type JdParseResponse = z.infer<typeof jdParseResponseSchema>;
 
 export const sessionTurnRequestSchema = z.object({
   sessionId: z.string().min(1),
-  transcript: z.string().min(1, 'Transcript cannot be empty'),
+  transcript: z.string().min(1, 'Transcript cannot be empty').max(TRANSCRIPT_MAX_LENGTH, `Transcript must be under ${TRANSCRIPT_MAX_LENGTH.toLocaleString()} characters`),
 });
 export type SessionTurnRequest = z.infer<typeof sessionTurnRequestSchema>;
 

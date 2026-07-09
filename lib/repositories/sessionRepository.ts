@@ -13,6 +13,15 @@ export const sessionRepository = {
     return InterviewSession.findById(id).lean();
   },
 
+  /**
+   * Finds a session by ID and verifies it belongs to the given user.
+   * Returns null if the session doesn't exist or doesn't belong to the user.
+   */
+  async findByIdAndUser(id: string, userId: string) {
+    await dbConnect();
+    return InterviewSession.findOne({ _id: id, userId }).lean();
+  },
+
   async findByUserId(userId: string) {
     await dbConnect();
     return InterviewSession.find({ userId }).sort({ createdAt: -1 }).lean();

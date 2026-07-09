@@ -1,7 +1,6 @@
 import Image from 'next/image';
 import { ArrowIcon, PlayIcon, ShieldIcon } from './icons';
 import { Waveform } from './Waveform';
-import { REPORT } from '@/lib/site';
 import styles from './landing.module.scss';
 
 export function Hero() {
@@ -59,14 +58,6 @@ export function Hero() {
               <span>Listening&hellip;</span>
             </div>
 
-            <div className={`${styles.floatCard} ${styles.floatScore}`}>
-              <span className={styles.floatScoreNum}>{REPORT.overall}</span>
-              <span className={styles.floatScoreLabel}>
-                live
-                <br />
-                score
-              </span>
-            </div>
 
             <div className={`${styles.floatCard} ${styles.floatTranscript}`}>
               <span className={styles.floatLabel}>
