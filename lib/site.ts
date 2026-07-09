@@ -47,10 +47,10 @@ export const NAV_LINKS: NavLink[] = [
 export type Stat = { value: string; label: string };
 
 export const STATS: Stat[] = [
-  { value: '<3s', label: 'voice response, so it feels like a real conversation' },
+  { value: '0', label: 'typing — it\u2019s a real voice conversation' },
   { value: '100%', label: 'tailored to the job description you paste in' },
   { value: '3', label: 'scored dimensions on every answer you give' },
-  { value: '\u221E', label: 'reps, on your own schedule, judgment-free' },
+  { value: '24/7', label: 'practice anytime, no one watching' },
 ];
 
 export type Step = { n: string; title: string; body: string };
