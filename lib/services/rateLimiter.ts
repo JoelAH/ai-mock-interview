@@ -54,24 +54,38 @@ export async function checkRateLimit(
   const now = new Date();
   const windowMs = config.windowSeconds * 1000;
   const windowStart = new Date(now.getTime() - windowMs);
+  const expiresAt = new Date(now.getTime() + windowMs);
 
-  // Atomically increment the counter for this key.
-  // If the existing bucket has expired (windowStart is too old), reset it.
-  const bucket = await RateLimit.findOneAndUpdate(
-    {
-      key,
-      windowStart: { $gte: windowStart },
-    },
-    {
-      $inc: { count: 1 },
-      $setOnInsert: {
-        key,
-        windowStart: now,
-        expiresAt: new Date(now.getTime() + windowMs),
-      },
-    },
-    { upsert: true, returnDocument: 'after' },
+  // Try to increment an existing valid (non-expired) bucket.
+  let bucket = await RateLimit.findOneAndUpdate(
+    { key, windowStart: { $gte: windowStart } },
+    { $inc: { count: 1 } },
+    { returnDocument: 'after' },
   );
+
+  if (!bucket) {
+    // No valid bucket exists — either first request or the window expired.
+    // Reset the bucket. Use updateOne with upsert to handle the race where
+    // another request might have created it between our read and write.
+    try {
+      bucket = await RateLimit.findOneAndUpdate(
+        { key },
+        { $set: { count: 1, windowStart: now, expiresAt } },
+        { upsert: true, returnDocument: 'after' },
+      );
+    } catch (err: unknown) {
+      // If there's still a race, just re-read and increment
+      if ((err as { code?: number }).code === 11000) {
+        bucket = await RateLimit.findOneAndUpdate(
+          { key },
+          { $inc: { count: 1 } },
+          { returnDocument: 'after' },
+        );
+      } else {
+        throw err;
+      }
+    }
+  }
 
   const count = bucket!.count as number;
   const resetAt = (bucket!.expiresAt as Date).getTime();
