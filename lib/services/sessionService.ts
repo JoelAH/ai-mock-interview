@@ -159,17 +159,32 @@ const realSessionService: ISessionService = {
     const contextMessage = await buildContextMessage(sessionId);
 
     // Ask the LLM for the opening question
+    // Add a random seed phrase to encourage variety across sessions
+    const openers = [
+      'Start with a question about a past technical decision.',
+      'Open with a question about how they handle ambiguity or uncertainty.',
+      'Begin with a question about a time they influenced a technical direction.',
+      'Start by asking about a challenging system they designed or improved.',
+      'Open with a question about how they approach working with cross-functional teams.',
+      'Begin with a question about a tradeoff they had to make under time pressure.',
+      'Start with a question about how they onboard into a new codebase or team.',
+      'Open with a question about a time they disagreed with a technical approach.',
+      'Begin by asking about their approach to breaking down a large project.',
+      'Start with a question about a production incident they navigated.',
+    ];
+    const opener = openers[Math.floor(Math.random() * openers.length)];
+
     const result = await llm.generateStructuredOutput({
       messages: [
         { role: 'system', content: ORCHESTRATOR_SYSTEM_PROMPT },
         {
           role: 'user',
-          content: `Session context:\n${contextMessage}\n\nGenerate the opening interview question. This is the very first question — make it a good icebreaker that's relevant to the role.`,
+          content: `Session context:\n${contextMessage}\n\nGenerate the opening interview question. This is the very first question — make it a good icebreaker that's relevant to the role. ${opener}`,
         },
       ],
       schema: orchestratorResultSchema,
       schemaName: ORCHESTRATOR_SCHEMA_NAME,
-      temperature: 0.6,
+      temperature: 0.85,
     });
 
     // Persist the question

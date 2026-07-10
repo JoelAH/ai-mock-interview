@@ -4,7 +4,7 @@
  */
 
 /** Maximum character length for a pasted job description. */
-export const JD_TEXT_MAX_LENGTH = 50_000;
+export const JD_TEXT_MAX_LENGTH = 10_000;
 
 /** Maximum character length for a single transcript turn. */
 export const TRANSCRIPT_MAX_LENGTH = 10_000;
