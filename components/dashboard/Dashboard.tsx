@@ -161,7 +161,7 @@ export default function Dashboard({ userName, data, allowance, checkoutUrls, cle
             </Box>
             <Box className={styles.trendCard}>
               <Typography className={styles.trendLabel}>Score Trend</Typography>
-              <ScoreTrendChart scores={sessions.map((s) => s.overallScore)} />
+              <ScoreTrendChart scores={[...sessions].reverse().map((s) => s.overallScore)} />
             </Box>
           </Box>
         )}

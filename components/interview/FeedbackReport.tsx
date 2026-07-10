@@ -239,7 +239,7 @@ export default function FeedbackReport({
             onClick={() => router.push('/interview/new')}
             className={styles.practiceBtn}
           >
-            Practice this gap again
+            Start a new interview
           </Button>
           <Button
             variant="outlined"

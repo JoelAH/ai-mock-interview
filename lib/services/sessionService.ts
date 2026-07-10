@@ -14,6 +14,7 @@ import { llm } from '@/lib/llm';
 import type { LLMMessage } from '@/lib/llm';
 import { sessionRepository, questionRepository } from '@/lib/repositories';
 import { audit } from '@/lib/services/auditService';
+import { feedbackService } from '@/lib/services/feedbackService';
 
 export interface ISessionService {
   /**
@@ -226,6 +227,8 @@ const realSessionService: ISessionService = {
     const lastQuestion = existingQuestions[existingQuestions.length - 1];
     if (lastQuestion) {
       await questionRepository.setAnswer(lastQuestion._id.toString(), transcript);
+      // Score the answer in the background (fire-and-forget — don't block the turn)
+      feedbackService.scoreAnswer(sessionId, lastQuestion._id.toString(), transcript).catch(() => {});
     }
 
     // 3. Build lean conversation history (no full JD)
@@ -299,6 +302,8 @@ const realSessionService: ISessionService = {
     const lastQuestion = existingQuestions[existingQuestions.length - 1];
     if (lastQuestion) {
       await questionRepository.setAnswer(lastQuestion._id.toString(), transcript);
+      // Score the answer in the background (fire-and-forget — don't block the stream)
+      feedbackService.scoreAnswer(sessionId, lastQuestion._id.toString(), transcript).catch(() => {});
     }
 
     // 2. Build lean payload
