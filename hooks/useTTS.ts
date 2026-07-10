@@ -74,9 +74,20 @@ export function useTTS({ onDone, onError }: UseTTSOptions = {}) {
 
       if (controller.signal.aborted) return;
 
+      // Add a tiny silence padding at the end to prevent the last frame
+      // from being cut off by the decoder (common with streamed MP3/Opus).
+      const paddedBuffer = audioCtx.createBuffer(
+        audioBuffer.numberOfChannels,
+        audioBuffer.length + audioCtx.sampleRate * 0.15, // 150ms padding
+        audioBuffer.sampleRate,
+      );
+      for (let ch = 0; ch < audioBuffer.numberOfChannels; ch++) {
+        paddedBuffer.getChannelData(ch).set(audioBuffer.getChannelData(ch));
+      }
+
       // Play it
       const source = audioCtx.createBufferSource();
-      source.buffer = audioBuffer;
+      source.buffer = paddedBuffer;
       source.connect(audioCtx.destination);
       sourceRef.current = source;
 
