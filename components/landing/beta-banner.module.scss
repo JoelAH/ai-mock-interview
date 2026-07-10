@@ -1,0 +1,123 @@
+@use '../../styles/theme' as *;
+
+.banner {
+  position: relative;
+  padding: clamp(2.5rem, 5vw, 4rem) 1.5rem;
+  text-align: center;
+  border-bottom: 1px solid var(--line);
+}
+
+.bannerInner {
+  max-width: 36rem;
+  margin-inline: auto;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.35rem 1rem;
+  border-radius: var(--r-pill);
+  background: var(--grad-warm);
+  color: var(--amber-ink);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 1.2rem;
+}
+
+.title {
+  font-size: clamp(1.6rem, 1.2rem + 2vw, 2.4rem);
+  font-family: var(--ff-display);
+  margin-bottom: 0.75rem;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: clamp(1rem, 0.95rem + 0.3vw, 1.15rem);
+  line-height: 1.6;
+  margin-bottom: 1.8rem;
+}
+
+.form {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.input {
+  flex: 1 1 14rem;
+  max-width: 20rem;
+  padding: 0.85rem 1.2rem;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1rem;
+  outline: none;
+  transition:
+    border-color 0.18s var(--ease),
+    box-shadow 0.18s var(--ease);
+
+  &::placeholder {
+    color: var(--text-muted);
+  }
+
+  &:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(0, 200, 180, 0.15);
+  }
+}
+
+.submitBtn {
+  padding: 0.85rem 1.5rem;
+  border-radius: var(--r-pill);
+  background: var(--grad-warm);
+  color: var(--amber-ink);
+  font-weight: 600;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    transform 0.18s var(--ease),
+    box-shadow 0.18s var(--ease);
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px -12px rgba(255, 154, 77, 0.6);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+.successMsg {
+  color: var(--teal);
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.errorMsg {
+  margin-top: 0.75rem;
+  color: #f87171;
+  font-size: 0.9rem;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

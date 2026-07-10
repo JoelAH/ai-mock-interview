@@ -1,3 +1,4 @@
+import { BETA_MODE } from '@/lib/beta';
 import { PLANS } from '@/lib/site';
 import { CheckIcon, ShieldIcon } from './icons';
 import styles from './landing.module.scss';
@@ -42,12 +43,14 @@ export function Pricing() {
               ))}
             </ul>
 
-            <a
-              href="/sign-up"
-              className={`${styles.btn} ${plan.featured ? styles.btnPrimary : styles.btnGhost} ${styles.btnBlock} ${styles.btnLg}`}
-            >
-              {plan.cta}
-            </a>
+            {!BETA_MODE && (
+              <a
+                href="/sign-up"
+                className={`${styles.btn} ${plan.featured ? styles.btnPrimary : styles.btnGhost} ${styles.btnBlock} ${styles.btnLg}`}
+              >
+                {plan.cta}
+              </a>
+            )}
           </div>
         ))}
       </div>

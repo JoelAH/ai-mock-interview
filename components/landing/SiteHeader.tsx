@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { BETA_MODE } from '@/lib/beta';
 import { NAV_LINKS, SITE } from '@/lib/site';
 import { ArrowIcon, Logo } from './icons';
 import styles from './landing.module.scss';
@@ -27,14 +28,16 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <div className={styles.headerCtas}>
-          <a href="/sign-in" className={styles.signIn}>
-            Sign in
-          </a>
-          <a href="/sign-up" className={`${styles.btn} ${styles.btnPrimary}`}>
-            Start free <ArrowIcon />
-          </a>
-        </div>
+        {!BETA_MODE && (
+          <div className={styles.headerCtas}>
+            <a href="/sign-in" className={styles.signIn}>
+              Sign in
+            </a>
+            <a href="/sign-up" className={`${styles.btn} ${styles.btnPrimary}`}>
+              Start free <ArrowIcon />
+            </a>
+          </div>
+        )}
 
         <button
           type="button"
@@ -70,14 +73,16 @@ export function SiteHeader() {
             {link.label}
           </a>
         ))}
-        <div className={styles.mobileCtas}>
-          <a href="/sign-in" className={`${styles.btn} ${styles.btnGhost} ${styles.btnBlock}`}>
-            Sign in
-          </a>
-          <a href="/sign-up" className={`${styles.btn} ${styles.btnPrimary} ${styles.btnBlock}`}>
-            Start free <ArrowIcon />
-          </a>
-        </div>
+        {!BETA_MODE && (
+          <div className={styles.mobileCtas}>
+            <a href="/sign-in" className={`${styles.btn} ${styles.btnGhost} ${styles.btnBlock}`}>
+              Sign in
+            </a>
+            <a href="/sign-up" className={`${styles.btn} ${styles.btnPrimary} ${styles.btnBlock}`}>
+              Start free <ArrowIcon />
+            </a>
+          </div>
+        )}
       </div>
     </header>
   );

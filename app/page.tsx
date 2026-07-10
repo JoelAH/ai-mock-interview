@@ -1,4 +1,6 @@
+import { BETA_MODE } from '@/lib/beta';
 import { SiteHeader } from '@/components/landing/SiteHeader';
+import { BetaBanner } from '@/components/landing/BetaBanner';
 import { Hero } from '@/components/landing/Hero';
 import { StatsStrip } from '@/components/landing/StatsStrip';
 import { HowItWorks } from '@/components/landing/HowItWorks';
@@ -15,6 +17,7 @@ export default function Home() {
     <>
       <SiteHeader />
       <main id="main">
+        {BETA_MODE && <BetaBanner />}
         <Hero />
         <StatsStrip />
         <HowItWorks />

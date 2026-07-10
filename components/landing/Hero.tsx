@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { BETA_MODE } from '@/lib/beta';
 import { ArrowIcon, PlayIcon, ShieldIcon } from './icons';
 import { Waveform } from './Waveform';
 import styles from './landing.module.scss';
@@ -26,14 +27,16 @@ export function Hero() {
             fix.
           </p>
 
-          <div className={styles.heroCtas}>
-            <a href="/sign-up" className={`${styles.btn} ${styles.btnPrimary} ${styles.btnLg}`}>
-              Start practicing free <ArrowIcon />
-            </a>
-            <a href="#how" className={`${styles.btn} ${styles.btnGhost} ${styles.btnLg}`}>
-              <PlayIcon /> See how it works
-            </a>
-          </div>
+          {!BETA_MODE && (
+            <div className={styles.heroCtas}>
+              <a href="/sign-up" className={`${styles.btn} ${styles.btnPrimary} ${styles.btnLg}`}>
+                Start practicing free <ArrowIcon />
+              </a>
+              <a href="#how" className={`${styles.btn} ${styles.btnGhost} ${styles.btnLg}`}>
+                <PlayIcon /> See how it works
+              </a>
+            </div>
+          )}
 
           <p className={styles.heroNote}>
             <ShieldIcon />
