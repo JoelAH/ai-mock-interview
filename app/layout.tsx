@@ -58,6 +58,7 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
   },
+  icons: { icon: '/mockfav.png' },
   category: 'technology',
 };
 
