@@ -18,8 +18,8 @@ have** can follow in the first few weeks.
 | `jurisdiction` | `[Your county/court venue, e.g. New Castle County, Delaware]` | The venue for disputes / arbitration seat |
 | `contactEmail` | `admin@wimeki.com` | A monitored legal-contact address |
 | `privacyEmail` | `admin@wimeki.com` | A monitored privacy-request address |
-| `effectiveDate` | `February 1, 2025` | The date you actually publish the final versions |
-| `consentVersion` | `2025-02-01` | Update whenever the voice-consent wording changes |
+| `effectiveDate` | `July 8, 2026` | The date you actually publish the final versions |
+| `consentVersion` | `2026-07-08` | Update whenever the voice-consent wording changes |
 
 ### Domain / URLs in `lib/site.ts → SITE`
 
@@ -54,6 +54,7 @@ All keys listed in `.env.example` must be populated in your hosting environment:
 - [ ] `ELEVENLABS_API_KEY` (only needed once Premium tier flips to ElevenLabs)
 - [ ] `LEMONSQUEEZY_API_KEY` / `LEMONSQUEEZY_WEBHOOK_SECRET` / `LEMONSQUEEZY_STORE_ID`
 - [ ] `LEMONSQUEEZY_VARIANT_STARTER` / `LEMONSQUEEZY_VARIANT_PRO` / `LEMONSQUEEZY_VARIANT_PREMIUM`
+- [ ] `NEXT_PUBLIC_LEMONSQUEEZY_CHECKOUT_STARTER` / `_PRO` / `_PREMIUM` (per-variant checkout URLs)
 - [ ] `USE_MOCKS=false` (must be explicitly false in production)
 
 ### Webhook endpoints to register
@@ -79,13 +80,11 @@ The full backend is implemented (all 19 tasks, 235 unit tests pass). Before laun
 
 ### Footer placeholder links
 
-These footer links currently point to `#` (non-functional):
+These footer links have been resolved:
 
-| Link | Location | Action |
-|------|----------|--------|
-| About | footer "Company" column | Create `/about` or link to an external page |
-| Blog | footer "Company" column | Create `/blog` or remove |
-| Contact | footer "Company" column | Create a contact page or replace with `mailto:` |
+- [x] About → `/about` page created
+- [x] Blog → `/blog` page created with 3 articles
+- [x] Contact → `mailto:admin@wimeki.com`
 
 ### Auth routes
 
@@ -94,9 +93,11 @@ These footer links currently point to `#` (non-functional):
 ### Payment processor
 
 - [x] Lemon Squeezy integration is complete (Task 19) — webhook verification, subscription sync, session-cap gating all wired.
-- [ ] Create three subscription products in Lemon Squeezy dashboard (Starter/Pro/Premium) and populate `LEMONSQUEEZY_VARIANT_*` env vars with the variant IDs
-- [ ] Wire checkout overlay / links on the pricing page — pass `checkout[custom][clerk_user_id]` to map subscription back to user
-- [ ] Test full checkout → webhook → tier sync flow in Lemon Squeezy test mode
+- [x] Create three subscription products in Lemon Squeezy dashboard (1 product, 3 variants: Starter/Pro/Premium) — variant IDs populated
+- [x] Wire checkout links in the dashboard — passes `checkout[custom][clerk_user_id]` to map subscription back to user
+- [x] Webhook payload normalization fixed (meta.event_name → eventName, meta.custom_data hoisted)
+- [x] Fallback user resolution by subscriptionId/lemonCustomerId for lifecycle events
+- [ ] Test full checkout → webhook → tier sync flow in Lemon Squeezy test mode (redirect back to app pending LS product settings)
 - [ ] Confirm the no-refunds language aligns with Lemon Squeezy's merchant-of-record terms (they handle disputes)
 
 ### OG image verification
@@ -146,7 +147,9 @@ The UI screens were built on mock data (Phase 2). They need to be wired to the r
 
 ### Content
 
-- [ ] Replace the landing "About" / "Blog" / "Contact" placeholders with real content
+- [x] About page created (`/about`) — indie dev story, social links, CTA
+- [x] Blog created (`/blog`) — 3 SEO-optimized articles
+- [x] Contact links to `mailto:admin@wimeki.com`
 - [ ] Write a data-processing agreement (DPA) addendum for enterprise / team customers if planned
 
 ---
@@ -206,7 +209,12 @@ Features and improvements planned after the initial launch. These are not blocke
 
 - [ ] Promote JD parsing or feedback generation to Lambda if latency or timeout becomes an issue (extraction is trivial — services have no framework coupling)
 - [ ] Add CloudWatch alarms on the CDK prod stack (error rate, latency P99)
-- [ ] Implement rate limiting on token-minting and session-creation routes
+- [x] Implement rate limiting on token-minting and session-creation routes (MongoDB-backed, applied to all sensitive routes)
+- [x] Security headers (CSP, HSTS, X-Frame-Options, etc.) configured in next.config.ts
+- [x] Session ownership verification (IDOR fix) — all session routes verify userId ownership
+- [x] Input size limits enforced server + client side
+- [x] Mock mode production guard (throws if USE_MOCKS=true in production)
+- [x] Audit logging (MongoDB) for all webhook and billing events
 
 ---
 
@@ -238,5 +246,14 @@ Features and improvements planned after the initial launch. These are not blocke
 | `app/sitemap.ts` | Sitemap (add routes as pages are created) |
 | `app/robots.ts` | Robots (currently allows all) |
 | `components/interview/VoiceConsent.tsx` | Voice-recording consent gate |
-| `components/landing/SiteFooter.tsx` | Footer links (About/Blog/Contact point to `#`) |
+| `components/landing/SiteFooter.tsx` | Footer links (About, Blog, Contact — all functional) |
+| `app/about/page.tsx` | About page |
+| `app/blog/page.tsx` | Blog index + article pages |
+| `app/dashboard/upgrade-success/page.tsx` | Post-checkout polling page (waits for webhook sync) |
+| `lib/services/rateLimiter.ts` | MongoDB-backed rate limiting |
+| `lib/services/auditService.ts` | Audit log writer |
+| `lib/models/RateLimit.ts` | Rate limit bucket model (TTL auto-cleanup) |
+| `lib/models/AuditLog.ts` | Audit log model |
+| `lib/config/limits.ts` | Shared input limits (JD text, transcript, TTS) |
+| `components/dashboard/PlanUpgrade.tsx` | Tier upgrade cards with checkout links |
 | `.env.example` | All required environment variables |
