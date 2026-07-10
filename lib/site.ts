@@ -24,8 +24,8 @@ export const LEGAL = {
   // The legal entity that operates the service (you / your company).
   entity: 'DevMockview',
   // Where the operator is based — drives governing law / venue.
-  governingLaw: '[Your State/Country, e.g. the State of Delaware, USA]',
-  jurisdiction: '[Your county/court venue, e.g. New Castle County, Delaware]',
+  governingLaw: 'the laws of Jamaica',
+  jurisdiction: 'the courts of Kingston, Jamaica',
   contactEmail: 'admin@wimeki.com',
   privacyEmail: 'admin@wimeki.com',
   // Update whenever you materially change either document.

@@ -14,10 +14,10 @@ have** can follow in the first few weeks.
 | Constant | Current value | What to replace it with |
 |----------|---------------|-------------------------|
 | `entity` | `DevMockview` | Your registered legal entity name (e.g. "DevMockview LLC") |
-| `governingLaw` | `[Your State/Country, e.g. the State of Delaware, USA]` | The actual jurisdiction whose laws govern your terms |
-| `jurisdiction` | `[Your county/court venue, e.g. New Castle County, Delaware]` | The venue for disputes / arbitration seat |
-| `contactEmail` | `admin@wimeki.com` | A monitored legal-contact address |
-| `privacyEmail` | `admin@wimeki.com` | A monitored privacy-request address |
+| `governingLaw` | `the laws of Jamaica` | ✅ Set |
+| `jurisdiction` | `the courts of Kingston, Jamaica` | ✅ Set |
+| `contactEmail` | `admin@wimeki.com` | ✅ Set |
+| `privacyEmail` | `admin@wimeki.com` | ✅ Set |
 | `effectiveDate` | `July 8, 2026` | The date you actually publish the final versions |
 | `consentVersion` | `2026-07-08` | Update whenever the voice-consent wording changes |
 
