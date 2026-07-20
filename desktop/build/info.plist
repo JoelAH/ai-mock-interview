@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.education</string>
+
+    <key>NSMicrophoneUsageDescription</key>
+    <string>DevMockView needs microphone access to conduct voice-based mock interviews. Your audio is streamed for real-time transcription only and is never stored.</string>
+
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>DevMockView Auth</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>devmockview</string>
+            </array>
+        </dict>
+    </array>
+
+    <key>NSSupportsAutomaticTermination</key>
+    <true/>
+
+    <key>NSSupportsSuddenTermination</key>
+    <false/>
+</dict>
+</plist>

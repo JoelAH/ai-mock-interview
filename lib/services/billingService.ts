@@ -1,9 +1,15 @@
 /**
  * Billing Service — subscription tier resolution, session-cap gating,
- * and Lemon Squeezy webhook handling.
+ * and webhook handling for both Lemon Squeezy and RevenueCat (Apple IAP).
  *
  * Framework-agnostic: no HTTP or Next.js imports.
  * The gating function is reusable by any client's route handler.
+ *
+ * Entitlement unification strategy:
+ * - Lemon Squeezy updates subscriptionTier/subscriptionStatus directly
+ * - RevenueCat updates appleSubscriptionTier/appleSubscriptionStatus
+ * - canCreateSession() resolves the effective tier as the HIGHER of the two sources
+ * - subscriptionSource tracks which source is currently "winning"
  */
 import { userRepository, sessionRepository } from '@/lib/repositories';
 import {
@@ -19,6 +25,36 @@ import { audit } from '@/lib/services/auditService';
 
 /** Statuses that grant access to create sessions. */
 const ACTIVE_STATUSES = new Set(['active', 'trialing']);
+
+/** Tier priority for unification: higher index = higher tier. */
+const TIER_PRIORITY: Record<SubscriptionTier, number> = {
+  free: 0,
+  starter: 1,
+  pro: 2,
+  premium: 3,
+};
+
+/** RevenueCat product ID → tier mapping */
+const REVENUECAT_PRODUCT_MAP: Record<string, SubscriptionTier> = {
+  'com.devmockview.starter.monthly': 'starter',
+  'com.devmockview.pro.monthly': 'pro',
+  'com.devmockview.premium.monthly': 'premium',
+};
+
+/** RevenueCat webhook event shape (subset we need) */
+export interface RevenueCatEvent {
+  type: string;
+  app_user_id: string;
+  product_id: string;
+  entitlement_ids?: string[];
+  store: string;
+  environment: string;
+  purchased_at_ms: number;
+  expiration_at_ms: number | null;
+  event_timestamp_ms: number;
+  is_trial_conversion?: boolean;
+  cancel_reason?: string;
+}
 
 export interface SessionAllowance {
   /** Whether the user may start a new session right now */
@@ -52,6 +88,18 @@ export interface IBillingService {
    * status + tier onto the user doc.
    */
   handleWebhookEvent(event: LemonSqueezyEvent): Promise<void>;
+
+  /**
+   * Processes a RevenueCat (Apple IAP) subscription lifecycle event and syncs
+   * Apple subscription status onto the user doc.
+   */
+  handleRevenueCatEvent(event: RevenueCatEvent): Promise<void>;
+
+  /**
+   * Returns which subscription source is currently active for a user.
+   * Used by the UI to show "via App Store" or "via Web".
+   */
+  getSubscriptionSource(clerkUserId: string): Promise<'apple' | 'lemonsqueezy' | null>;
 }
 
 /**
@@ -92,15 +140,23 @@ export const billingService: IBillingService = {
       };
     }
 
-    const tier = (user.subscriptionTier ?? 'free') as SubscriptionTier;
+    // Resolve the effective tier — highest between Lemon Squeezy and Apple
+    const tier = resolveEffectiveTier(user);
     const config = getTierConfig(tier);
     const limit = config.sessionsPerMonth;
 
+    // Override flag bypasses subscription status check
+    const hasOverride = user.subscriptionOverride === true;
+
+    // Check if either subscription source is active
+    const lsStatus = (user.subscriptionStatus ?? 'none') as string;
+    const appleStatus = (user.appleSubscriptionStatus ?? 'none') as string;
+    const hasActiveSub = hasOverride || ACTIVE_STATUSES.has(lsStatus) || ACTIVE_STATUSES.has(appleStatus);
+
     // Free tier is the no-subscription trial: allowed until the trial cap is hit,
     // no active-subscription requirement. Paid tiers require an active status.
-    const status = user.subscriptionStatus ?? 'none';
     const requiresActiveSub = tier !== 'free';
-    if (requiresActiveSub && !ACTIVE_STATUSES.has(status)) {
+    if (requiresActiveSub && !hasActiveSub) {
       return {
         allowed: false,
         tier,
@@ -127,7 +183,7 @@ export const billingService: IBillingService = {
 
   async resolveTtsProvider(clerkUserId: string): Promise<TtsProvider> {
     const user = await userRepository.findByClerkId(clerkUserId);
-    const tier = (user?.subscriptionTier ?? 'free') as SubscriptionTier;
+    const tier = user ? resolveEffectiveTier(user) : 'free';
     return getTtsProviderForTier(tier);
   },
 
@@ -171,6 +227,7 @@ export const billingService: IBillingService = {
 
     const fields: Parameters<typeof userRepository.updateSubscription>[1] = {
       subscriptionStatus: status,
+      subscriptionSource: 'lemonsqueezy',
       lemonCustomerId: attrs.customer_id != null ? String(attrs.customer_id) : null,
       subscriptionId: event.data.id,
     };
@@ -185,4 +242,89 @@ export const billingService: IBillingService = {
 
     await userRepository.updateSubscription(clerkUserId, fields);
   },
+
+  async handleRevenueCatEvent(event: RevenueCatEvent): Promise<void> {
+    const clerkUserId = event.app_user_id;
+    if (!clerkUserId) return;
+
+    const productId = event.product_id;
+    const resolvedTier = REVENUECAT_PRODUCT_MAP[productId] ?? null;
+
+    // Map RevenueCat event types to our internal status
+    let appleStatus: SubscriptionStatus;
+    switch (event.type) {
+      case 'INITIAL_PURCHASE':
+      case 'RENEWAL':
+        appleStatus = 'active';
+        break;
+      case 'CANCELLATION':
+      case 'EXPIRATION':
+        appleStatus = 'cancelled';
+        break;
+      case 'BILLING_ISSUE_DETECTED':
+        appleStatus = 'past_due';
+        break;
+      default:
+        // For other events (SUBSCRIBER_ALIAS, PRODUCT_CHANGE, etc.)
+        // default to active if we have a product, otherwise leave unchanged
+        appleStatus = resolvedTier ? 'active' : 'none';
+    }
+
+    const fields: Parameters<typeof userRepository.updateSubscription>[1] = {
+      appleSubscriptionStatus: appleStatus,
+      revenuecatSubscriptionId: productId,
+    };
+
+    // Set Apple tier
+    if (appleStatus === 'cancelled' || appleStatus === 'none') {
+      fields.appleSubscriptionTier = 'free';
+    } else if (resolvedTier) {
+      fields.appleSubscriptionTier = resolvedTier;
+    }
+
+    await userRepository.updateSubscription(clerkUserId, fields);
+  },
+
+  async getSubscriptionSource(clerkUserId: string): Promise<'apple' | 'lemonsqueezy' | null> {
+    const user = await userRepository.findByClerkId(clerkUserId);
+    if (!user) return null;
+
+    const lsTier = (user.subscriptionTier ?? 'free') as SubscriptionTier;
+    const appleTier = (user.appleSubscriptionTier ?? 'free') as SubscriptionTier;
+    const lsActive = ACTIVE_STATUSES.has(user.subscriptionStatus ?? 'none');
+    const appleActive = ACTIVE_STATUSES.has(user.appleSubscriptionStatus ?? 'none');
+
+    if (!lsActive && !appleActive) return null;
+    if (appleActive && !lsActive) return 'apple';
+    if (lsActive && !appleActive) return 'lemonsqueezy';
+
+    // Both active — return whichever has the higher tier
+    return TIER_PRIORITY[appleTier] >= TIER_PRIORITY[lsTier] ? 'apple' : 'lemonsqueezy';
+  },
 };
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolves the effective subscription tier from both sources.
+ * The higher tier wins when a user has subscriptions from both platforms.
+ */
+function resolveEffectiveTier(user: Record<string, unknown>): SubscriptionTier {
+  // Admin override — grants premium regardless of subscription state
+  if (user.subscriptionOverride === true) {
+    return 'premium';
+  }
+
+  const lsTier = (user.subscriptionTier ?? 'free') as SubscriptionTier;
+  const appleTier = (user.appleSubscriptionTier ?? 'free') as SubscriptionTier;
+
+  const lsActive = ACTIVE_STATUSES.has((user.subscriptionStatus as string) ?? 'none');
+  const appleActive = ACTIVE_STATUSES.has((user.appleSubscriptionStatus as string) ?? 'none');
+
+  const effectiveLs = lsActive ? lsTier : 'free';
+  const effectiveApple = appleActive ? appleTier : 'free';
+
+  return TIER_PRIORITY[effectiveApple] >= TIER_PRIORITY[effectiveLs] ? effectiveApple : effectiveLs;
+}

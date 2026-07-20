@@ -35,7 +35,17 @@ export const userRepository = {
   async updateSubscription(
     clerkUserId: string,
     fields: Partial<
-      Pick<UserDTO, 'subscriptionStatus' | 'subscriptionTier' | 'subscriptionId' | 'lemonCustomerId'>
+      Pick<
+        UserDTO,
+        | 'subscriptionStatus'
+        | 'subscriptionTier'
+        | 'subscriptionId'
+        | 'lemonCustomerId'
+        | 'subscriptionSource'
+        | 'revenuecatSubscriptionId'
+        | 'appleSubscriptionTier'
+        | 'appleSubscriptionStatus'
+      >
     >,
   ) {
     await dbConnect();

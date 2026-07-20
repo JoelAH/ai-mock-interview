@@ -1,0 +1,57 @@
+.score-chart {
+  position: relative;
+  width: 100%;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.score-chart-svg {
+  width: 100%;
+  display: block;
+}
+
+.score-chart-line {
+  fill: none;
+  stroke: #6366f1;
+  stroke-width: 0.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.score-chart-dot {
+  fill: #6366f1;
+}
+
+.score-chart-grid {
+  stroke: rgba(255, 255, 255, 0.04);
+  stroke-width: 0.2;
+}
+
+.score-chart-labels {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+}
+
+.score-chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.score-chart-empty p {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.3);
+}

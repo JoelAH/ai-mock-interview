@@ -4,7 +4,7 @@ import { AuditLog } from '@/lib/models';
 import { dbConnect } from '@/lib/db';
 
 export interface AuditEntry {
-  source: 'lemonsqueezy' | 'clerk' | 'system';
+  source: 'lemonsqueezy' | 'clerk' | 'system' | 'revenuecat';
   eventName: string;
   clerkUserId?: string | null;
   payload?: unknown;

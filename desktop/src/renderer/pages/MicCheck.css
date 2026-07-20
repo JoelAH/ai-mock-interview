@@ -1,0 +1,181 @@
+.mic-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 96px);
+}
+
+.mic-check-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 400px;
+  gap: 16px;
+}
+
+.mic-check-icon {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+
+.mic-check-icon--error {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.mic-check-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #f5f5f5;
+  margin: 0;
+}
+
+.mic-check-desc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Audio level meter */
+.mic-level-container {
+  width: 100%;
+  margin: 12px 0;
+}
+
+.mic-level-track {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.mic-level-bar {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6, #a78bfa);
+  transition: width 0.05s ease-out;
+}
+
+.mic-level-dots {
+  display: flex;
+  gap: 3px;
+  justify-content: center;
+}
+
+.mic-level-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  transition: background 0.08s ease;
+}
+
+.mic-level-dot--active {
+  background: #6366f1;
+}
+
+/* Device name */
+.mic-device-name {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.35);
+  margin: 0;
+}
+
+/* Status */
+.mic-status {
+  margin: 4px 0;
+}
+
+.mic-status-ok {
+  font-size: 13px;
+  font-weight: 500;
+  color: #34d399;
+}
+
+.mic-status-waiting {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Buttons */
+.mic-check-btn {
+  margin-top: 8px;
+  padding: 12px 28px;
+  border-radius: 10px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.12s ease, transform 0.1s ease;
+}
+
+.mic-check-btn--primary {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+}
+
+.mic-check-btn--primary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.mic-check-btn--primary:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.mic-check-btn--primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.mic-check-btn--retry {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mic-check-btn--retry:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Instructions */
+.mic-check-instructions {
+  text-align: left;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 16px 20px;
+  width: 100%;
+}
+
+.mic-check-instructions p {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 8px;
+}
+
+.mic-check-instructions ol {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.mic-check-instructions li {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.7;
+}
+
+.mic-check-instructions strong {
+  color: rgba(255, 255, 255, 0.8);
+}

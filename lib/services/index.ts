@@ -8,4 +8,5 @@ export {
   billingService,
   type IBillingService,
   type SessionAllowance,
+  type RevenueCatEvent,
 } from './billingService';

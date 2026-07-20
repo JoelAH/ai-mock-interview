@@ -1,0 +1,73 @@
+appId: com.devmockview.desktop
+productName: DevMockView
+copyright: Copyright © 2024 DevMockView
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - dist/**/*
+  - "!node_modules/**/*"
+  - node_modules/electron-store/**/*
+
+extraMetadata:
+  main: dist/main/main.js
+
+mac:
+  category: public.app-category.education
+  target:
+    - target: dmg
+      arch:
+        - universal
+    - target: mas
+      arch:
+        - universal
+  icon: build/icon.icns
+  darkModeSupport: true
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  extendInfo: build/info.plist
+  # Code signing identity — set via CSC_NAME env var or here:
+  # identity: "Developer ID Application: Your Name (TEAMID)"
+  protocols:
+    - name: DevMockView
+      schemes:
+        - devmockview
+  notarize: false
+  # To enable notarization for DMG distribution:
+  # Set APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID env vars
+  # Then set: notarize: true
+
+mas:
+  entitlements: build/entitlements.mas.plist
+  entitlementsInherit: build/entitlements.mas.inherit.plist
+  # Provisioning profile — download from Apple Developer portal:
+  # provisioningProfile: build/embedded.provisionprofile
+  # Signing identity for MAS:
+  # identity: "3rd Party Mac Developer Application: Your Name (TEAMID)"
+  binaries: []
+
+masDev:
+  entitlements: build/entitlements.mas.plist
+  entitlementsInherit: build/entitlements.mas.inherit.plist
+  # For local sandbox testing (no provisioning profile needed):
+  # identity: "Mac Developer: Your Name (TEAMID)"
+
+dmg:
+  sign: false
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+
+pkg:
+  # Mac App Store package signing:
+  # identity: "3rd Party Mac Developer Installer: Your Name (TEAMID)"
+  isRelocatable: false
+  isVersionChecked: true
