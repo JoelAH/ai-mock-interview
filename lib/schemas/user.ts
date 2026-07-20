@@ -28,6 +28,8 @@ export const userSchema = z.object({
   revenuecatSubscriptionId: z.string().nullable().default(null),
   appleSubscriptionTier: subscriptionTierEnum.nullable().default(null),
   appleSubscriptionStatus: subscriptionStatusEnum.nullable().default(null),
+  /** Admin override — when true, user gets premium access regardless of subscription state. */
+  subscriptionOverride: z.boolean().default(false),
 });
 
 export type UserDTO = z.infer<typeof userSchema>;

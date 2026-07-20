@@ -34,6 +34,8 @@ const userSchema = new Schema(
       enum: ['active', 'cancelled', 'past_due', 'paused', 'trialing', 'none', null],
       default: null,
     },
+    // Admin override — grants premium access regardless of subscription state
+    subscriptionOverride: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

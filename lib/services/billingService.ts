@@ -145,10 +145,13 @@ export const billingService: IBillingService = {
     const config = getTierConfig(tier);
     const limit = config.sessionsPerMonth;
 
+    // Override flag bypasses subscription status check
+    const hasOverride = user.subscriptionOverride === true;
+
     // Check if either subscription source is active
     const lsStatus = (user.subscriptionStatus ?? 'none') as string;
     const appleStatus = (user.appleSubscriptionStatus ?? 'none') as string;
-    const hasActiveSub = ACTIVE_STATUSES.has(lsStatus) || ACTIVE_STATUSES.has(appleStatus);
+    const hasActiveSub = hasOverride || ACTIVE_STATUSES.has(lsStatus) || ACTIVE_STATUSES.has(appleStatus);
 
     // Free tier is the no-subscription trial: allowed until the trial cap is hit,
     // no active-subscription requirement. Paid tiers require an active status.
@@ -309,6 +312,11 @@ export const billingService: IBillingService = {
  * The higher tier wins when a user has subscriptions from both platforms.
  */
 function resolveEffectiveTier(user: Record<string, unknown>): SubscriptionTier {
+  // Admin override — grants premium regardless of subscription state
+  if (user.subscriptionOverride === true) {
+    return 'premium';
+  }
+
   const lsTier = (user.subscriptionTier ?? 'free') as SubscriptionTier;
   const appleTier = (user.appleSubscriptionTier ?? 'free') as SubscriptionTier;
 
