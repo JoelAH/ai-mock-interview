@@ -1,0 +1,178 @@
+.offerings {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.offerings-unavailable {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+  padding: 32px 0;
+}
+
+.offerings-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.offerings-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #f5f5f5;
+  margin: 0 0 8px;
+}
+
+.offerings-subtitle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+}
+
+.offerings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.offering-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: border-color 0.15s ease;
+}
+
+.offering-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.offering-card--popular {
+  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(99, 102, 241, 0.06);
+}
+
+.offering-card--current {
+  opacity: 0.7;
+}
+
+.offering-badge {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.offering-tier {
+  font-size: 16px;
+  font-weight: 600;
+  color: #f5f5f5;
+  margin: 0;
+}
+
+.offering-price {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.offering-price-amount {
+  font-size: 28px;
+  font-weight: 700;
+  color: #f5f5f5;
+}
+
+.offering-price-period {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.offering-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.offering-feature {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.65);
+  padding-left: 18px;
+  position: relative;
+}
+
+.offering-feature::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #6366f1;
+  font-size: 12px;
+}
+
+.offering-button {
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: #f5f5f5;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.offering-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.offering-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.offering-card--popular .offering-button {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+}
+
+.offering-card--popular .offering-button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.offerings-footer {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding-top: 8px;
+}
+
+.offerings-restore,
+.offerings-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: color 0.15s ease;
+}
+
+.offerings-restore:hover,
+.offerings-close:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
