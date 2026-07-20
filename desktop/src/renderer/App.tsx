@@ -8,6 +8,7 @@ import {
 } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { IAPProvider } from './hooks/useIAP';
+import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import NewInterview from './pages/NewInterview';
@@ -70,10 +71,12 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <HashRouter>
-        <AppRoutes />
-      </HashRouter>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <HashRouter>
+          <AppRoutes />
+        </HashRouter>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

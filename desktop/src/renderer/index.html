@@ -42,9 +42,70 @@
       @keyframes spin {
         to { transform: rotate(360deg); }
       }
+
+      /* Reduced motion: disable all animations and transitions */
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+
+      /* Keyboard focus ring (visible only on keyboard navigation) */
+      :focus-visible {
+        outline: 2px solid rgba(99, 102, 241, 0.7);
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+
+      /* Hide focus ring for mouse/touch interactions */
+      :focus:not(:focus-visible) {
+        outline: none;
+      }
+
+      /* Splash screen shown before React mounts */
+      #splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        background: #1a1a1a;
+        z-index: 9999;
+        transition: opacity 0.3s ease;
+      }
+      #splash.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      #splash-logo {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        font-weight: 700;
+        color: #fff;
+      }
+      #splash-text {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.4);
+      }
     </style>
   </head>
   <body>
+    <!-- Splash screen visible during cold start -->
+    <div id="splash">
+      <div id="splash-logo">D</div>
+      <span id="splash-text">Loading…</span>
+    </div>
+
     <div id="root"></div>
     <script type="module" src="./main.tsx"></script>
   </body>
