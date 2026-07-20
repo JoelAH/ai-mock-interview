@@ -1,0 +1,155 @@
+.dashboard {
+  max-width: 720px;
+}
+
+.dashboard-header {
+  margin-bottom: 32px;
+}
+
+.dashboard-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #f5f5f5;
+  margin: 0 0 4px;
+  letter-spacing: -0.3px;
+}
+
+.dashboard-subtitle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+/* Stat cards */
+.stat-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.stat-card-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 8px;
+}
+
+.stat-card-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #f5f5f5;
+  margin: 0;
+}
+
+.stat-card-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.35);
+  margin: 4px 0 0;
+}
+
+/* Tier badge */
+.tier-badge {
+  display: inline-block;
+  font-size: 24px;
+  font-weight: 700;
+  color: #f5f5f5;
+  text-transform: capitalize;
+}
+
+.tier-badge--free {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.tier-badge--starter {
+  color: #34d399;
+}
+
+.tier-badge--pro {
+  color: #6366f1;
+}
+
+.tier-badge--premium {
+  color: #f59e0b;
+}
+
+.tier-source {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 4px;
+}
+
+/* Subscription actions */
+.dashboard-sub-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.dashboard-sub-btn {
+  padding: 6px 14px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.dashboard-sub-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.dashboard-sub-btn--upgrade {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-color: transparent;
+  color: #fff;
+}
+
+.dashboard-sub-btn--upgrade:hover {
+  opacity: 0.9;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-color: transparent;
+}
+
+/* Sections */
+.dashboard-section {
+  margin-bottom: 28px;
+}
+
+.dashboard-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 12px;
+}
+
+/* Loading shimmer */
+.dashboard-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.shimmer {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
