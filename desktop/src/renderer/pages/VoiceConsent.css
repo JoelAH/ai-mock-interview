@@ -1,0 +1,146 @@
+.consent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 96px);
+  padding: 32px;
+}
+
+.consent-card {
+  max-width: 480px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 32px;
+}
+
+.consent-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.consent-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+
+.consent-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #f5f5f5;
+  margin: 0 0 6px;
+}
+
+.consent-subtitle {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 0;
+}
+
+.consent-body {
+  margin-bottom: 24px;
+}
+
+.consent-section {
+  margin-bottom: 16px;
+}
+
+.consent-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 6px;
+}
+
+.consent-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.consent-section li {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.7;
+  padding-left: 18px;
+  position: relative;
+}
+
+.consent-section li::before {
+  content: '•';
+  position: absolute;
+  left: 4px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.consent-highlight {
+  background: rgba(52, 211, 153, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.15);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-top: 16px;
+}
+
+.consent-highlight p {
+  font-size: 12px;
+  color: rgba(52, 211, 153, 0.9);
+  margin: 0;
+}
+
+.consent-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.consent-btn {
+  flex: 1;
+  padding: 11px 20px;
+  border-radius: 9px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.12s ease, transform 0.1s ease;
+}
+
+.consent-btn--accept {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+}
+
+.consent-btn--accept:hover {
+  opacity: 0.9;
+}
+
+.consent-btn--accept:active {
+  transform: scale(0.97);
+}
+
+.consent-btn--decline {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.consent-btn--decline:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.consent-version {
+  text-align: center;
+  margin-top: 14px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.2);
+}
+
+/* Declined state */
+.consent-declined {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.consent-declined-text {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 16px;
+}

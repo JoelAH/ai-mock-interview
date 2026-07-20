@@ -3,6 +3,7 @@ import { api } from '../api/client';
 import { ApiRequestError } from '../api/client';
 import type { JdParseResponse } from '../api/types';
 import { useIAP } from '../hooks/useIAP';
+import { hasValidConsent } from '../hooks/useConsent';
 import SubscriptionOfferings from '../components/SubscriptionOfferings';
 import './NewInterview.css';
 
@@ -45,9 +46,12 @@ export default function NewInterview() {
 
   function handleConfirm() {
     if (!parseResult) return;
-    // Store session ID and navigate to mic check (Task 9 will handle this route)
-    // For now, navigate using hash router
-    window.location.hash = `#/interview/mic-check?sessionId=${parseResult.sessionId}`;
+    // Check if voice consent has been granted; if not, route to consent gate
+    if (!hasValidConsent()) {
+      window.location.hash = `#/interview/consent?sessionId=${parseResult.sessionId}`;
+    } else {
+      window.location.hash = `#/interview/mic-check?sessionId=${parseResult.sessionId}`;
+    }
   }
 
   function handleBack() {
