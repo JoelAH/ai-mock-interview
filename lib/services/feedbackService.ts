@@ -68,8 +68,10 @@ Given the full transcript of questions and answers, produce:
 - technicalAccuracyScore (0-100): domain knowledge, correctness, technical depth
 - communicationScore (0-100): articulation, conciseness, confidence
 - structureScore (0-100): answer organization, use of frameworks (STAR, etc.), logical flow
-- diagnosis: one plain-English sentence summarizing the performance (e.g. "Strong technical foundation with room to improve answer structure")
-- synthesizedInsight: actionable 2-3 sentence advice for what to focus on next time, based on patterns across all answers
+- diagnosis: one plain-English sentence summarizing THIS candidate's specific performance (reference specific topics they discussed)
+- synthesizedInsight: actionable 2-3 sentence advice tailored to THIS candidate's specific answers — reference concrete examples from their transcript, name the topics where they were strong or weak, and give specific next steps
+
+CRITICAL: Your diagnosis and synthesizedInsight MUST be unique to this candidate's actual answers. Reference specific topics, technologies, or scenarios they discussed. Do NOT give generic advice like "use STAR method" or "improve clarity" unless you cite a specific answer where this was a problem. If the candidate discussed distributed systems, mention that. If they struggled on a specific question about caching, say so. Generic feedback is useless — be specific.
 
 Be calibrated: 60 = needs work, 70 = solid, 80 = strong, 90+ = exceptional. Most candidates should fall in the 65-80 range.`;
 

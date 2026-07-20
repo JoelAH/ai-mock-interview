@@ -50,8 +50,10 @@ export default function InterviewSession() {
   const [transcript, setTranscript] = useState('');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isLastQuestion, setIsLastQuestion] = useState(false);
   const transcriptRef = useRef('');
   const phaseRef = useRef<TurnPhase>('loading');
+  const isLastQuestionRef = useRef(false);
 
   // Keep phaseRef in sync for use inside callbacks
   phaseRef.current = phase;
@@ -152,16 +154,21 @@ export default function InterviewSession() {
 
           if (chunk.type === 'question') {
             setQuestionsAsked((prev) => prev + 1);
+            // Ensure follow-up questions are labeled correctly regardless of what
+            // the server sends for questionType (defensive — server should fix this too)
+            const displayType = chunk.isFollowUp ? 'follow_up' : chunk.questionType;
             setCurrentQuestion({
               text: chunk.text,
-              type: chunk.questionType,
+              type: displayType,
               isFollowUp: chunk.isFollowUp,
               order: chunk.questionOrder ?? questionIndex,
             });
             setPhase('asking');
           } else if (chunk.type === 'decision' && chunk.action === 'end') {
-            setPhase('done');
-            return;
+            // Mark this as the last question — the user should still see and
+            // answer the closing question before we transition to 'done'.
+            setIsLastQuestion(true);
+            isLastQuestionRef.current = true;
           } else if (chunk.type === 'done') {
             setQuestionIndex(chunk.questionOrder);
           }
@@ -203,6 +210,37 @@ export default function InterviewSession() {
     // Stop STT and capture final transcript
     sttRef.current.stop();
     const userTranscript = transcriptRef.current || transcript || '(no response)';
+
+    // If this was the last question, save the answer and end
+    if (isLastQuestionRef.current) {
+      setPhase('thinking');
+      try {
+        // Send the final answer to be persisted (the server already marked
+        // the session as completed, but we still need to save this answer)
+        const response = await fetch('/api/session/turn', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId, transcript: userTranscript }),
+        });
+
+        if (response.ok) {
+          // Consume the stream — the server will persist the answer
+          // and return an 'end' action again (which we can ignore)
+          const reader = response.body?.getReader();
+          if (reader) {
+            while (true) {
+              const { done } = await reader.read();
+              if (done) break;
+            }
+          }
+        }
+      } catch {
+        // Best-effort — still transition to done
+      }
+      setPhase('done');
+      return;
+    }
+
     setPhase('thinking');
 
     try {

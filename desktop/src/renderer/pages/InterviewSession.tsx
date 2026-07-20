@@ -23,8 +23,10 @@ export default function InterviewSession() {
   const [question, setQuestion] = useState<QuestionState | null>(null);
   const [liveTranscript, setLiveTranscript] = useState('');
   const [interimText, setInterimText] = useState('');
+  const [isLastQuestion, setIsLastQuestion] = useState(false);
 
   const hasStartedRef = useRef(false);
+  const isLastQuestionRef = useRef(false);
   const tts = useTTS();
 
   const stt = useSTT({
@@ -63,19 +65,23 @@ export default function InterviewSession() {
       switch (chunk.type) {
         case 'decision':
           if (chunk.action === 'end') {
-            setPhase('done');
-            return;
+            // Mark this as the last question — still show it to the user
+            setIsLastQuestion(true);
+            isLastQuestionRef.current = true;
           }
           break;
 
-        case 'question':
+        case 'question': {
+          // Ensure follow-up questions are labeled correctly
+          const displayType = chunk.isFollowUp ? 'follow_up' : chunk.questionType;
           newQuestion = {
             text: chunk.text,
-            type: chunk.questionType,
+            type: displayType,
             isFollowUp: chunk.isFollowUp,
             order: question?.order ?? 0,
           };
           break;
+        }
 
         case 'done':
           if (newQuestion) {
@@ -123,6 +129,22 @@ export default function InterviewSession() {
     // Send the transcript as a turn
     setPhase('thinking');
     setInterimText('');
+
+    // If this was the last question, send the answer but transition to done after
+    if (isLastQuestionRef.current) {
+      try {
+        const stream = await api.sessionTurn({
+          sessionId,
+          transcript: finalTranscript,
+        });
+        // Consume the stream to let the server persist the answer
+        for await (const _ of stream) { /* drain */ }
+      } catch {
+        // Best-effort — still transition to done
+      }
+      setPhase('done');
+      return;
+    }
 
     try {
       const stream = await api.sessionTurn({

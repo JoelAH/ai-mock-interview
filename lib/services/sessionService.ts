@@ -63,13 +63,25 @@ Your role:
 - Probe when the answer is promising but shallow — ask for specifics, numbers, tradeoffs, or alternatives.
 - Advance when the answer is thorough enough or a new topic would be more valuable.
 - Rescue when the candidate seems stuck or confused — rephrase, offer a hint, or pivot to an easier angle.
-- End after 4-6 substantive questions have been covered well, or if the candidate has clearly demonstrated their level.
+- End after 4-6 substantive topics have been covered well, or if the candidate has clearly demonstrated their level.
 
-Follow-up limits:
-- Ask at most 1-2 follow-up probes on the same topic before advancing to a new topic.
-- A good interview covers breadth, not just depth. Aim for 3-4 distinct topics across the session.
-- After probing once, prefer to ADVANCE unless the answer was clearly incomplete or evasive.
-- Do not probe the same topic more than twice in a row.
+Follow-up limits (STRICT — you MUST obey these):
+- You may ask AT MOST 2 follow-up probes on the same topic before you MUST advance to a new topic.
+- After 2 consecutive probes, your next action MUST be "advance" — no exceptions.
+- Prefer to advance after 1 probe unless the answer was clearly incomplete or evasive.
+- A good interview covers breadth, not just depth. Aim for 4-6 distinct topics across the session.
+
+Question type labeling:
+- When isFollowUp is true, questionType MUST be "follow_up". Never label a follow-up as "behavioral" or "architectural".
+- Use "behavioral" only for NEW standalone behavioral questions (not follow-ups).
+- Use "architectural" only for NEW standalone technical/system design questions (not follow-ups).
+- Use "rescue" when rephrasing or offering a hint on the current topic.
+
+Question distribution:
+- Prioritize technical and architectural questions that probe the candidate's understanding of the technologies, systems, and patterns mentioned in the role/stack/focus areas.
+- Aim for roughly 60-70% technical/architectural questions and 30-40% behavioral questions.
+- Behavioral questions should focus on technical leadership, decision-making, and problem-solving — not generic "meetings and collaboration" topics.
+- Draw questions directly from the tech stack and focus areas provided in the session context.
 
 Rules:
 - Keep questions concise (1-3 sentences).
@@ -121,6 +133,62 @@ async function buildContextMessage(sessionId: string): Promise<string> {
     `Focus areas: ${signals.focusAreas?.join(', ') || 'general'}`,
     `Tech stack: ${signals.stack?.join(', ') || 'general'}`,
   ].join('\n');
+}
+
+// ---------------------------------------------------------------------------
+// Follow-up limit enforcement — hard cap at 2 consecutive follow-ups.
+// ---------------------------------------------------------------------------
+
+/** Maximum consecutive follow-up probes allowed before forcing an advance. */
+const MAX_CONSECUTIVE_FOLLOWUPS = 2;
+
+/**
+ * Count the number of consecutive follow-up questions at the tail of the
+ * question list. Used to enforce the hard follow-up cap regardless of what
+ * the LLM decides.
+ */
+function countConsecutiveFollowups(questions: Array<{ isFollowUp?: boolean }>): number {
+  let count = 0;
+  for (let i = questions.length - 1; i >= 0; i--) {
+    if (questions[i].isFollowUp) {
+      count++;
+    } else {
+      break;
+    }
+  }
+  return count;
+}
+
+/**
+ * Enforce follow-up limits on the LLM's decision. If we've already hit
+ * the max consecutive follow-ups, override the result to force an advance.
+ * Also fixes type labeling: if isFollowUp is true, questionType must be 'follow_up'.
+ */
+function enforceFollowupLimits(
+  result: OrchestratorResult,
+  consecutiveFollowups: number,
+): OrchestratorResult {
+  // Fix type labeling: follow-ups must have type 'follow_up'
+  if (result.isFollowUp && result.questionType !== 'follow_up') {
+    result = { ...result, questionType: 'follow_up' };
+  }
+
+  // If we've hit the limit and the LLM still wants to probe, deny it
+  if (consecutiveFollowups >= MAX_CONSECUTIVE_FOLLOWUPS && result.action === 'probe') {
+    // The LLM already generated a follow-up question, but we can't use it.
+    // We'll still return the question but mark it as NOT a follow-up and force advance.
+    // The question text might still be a follow-up style question, but the action
+    // forces the next turn to be treated as a new topic. This is acceptable since
+    // the prompt should prevent this case, but this is a hard guard.
+    return {
+      ...result,
+      action: 'advance',
+      isFollowUp: false,
+      questionType: result.questionType === 'follow_up' ? 'architectural' : result.questionType,
+    };
+  }
+
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -231,30 +299,55 @@ const realSessionService: ISessionService = {
       feedbackService.scoreAnswer(sessionId, lastQuestion._id.toString(), transcript).catch(() => {});
     }
 
-    // 3. Build lean conversation history (no full JD)
+    // 2b. If session is already completed (user answering the final question),
+    // just save the answer and signal done — don't call the LLM again.
+    const session = await sessionRepository.findById(sessionId);
+    if (session?.status === 'completed') {
+      return {
+        questionText: '',
+        questionType: 'behavioral',
+        isFollowUp: false,
+        questionOrder: currentOrder - 1,
+        action: 'end',
+      };
+    }
+
+    // 3. Count consecutive follow-ups for limit enforcement
+    const consecutiveFollowups = countConsecutiveFollowups(existingQuestions);
+
+    // 4. Build lean conversation history (no full JD)
     const contextMessage = await buildContextMessage(sessionId);
     const history = await buildConversationHistory(sessionId);
 
-    // 4. Call LLM for the next turn decision
+    // 5. Call LLM for the next turn decision — include followup count so LLM is aware
+    const followupWarning = consecutiveFollowups >= MAX_CONSECUTIVE_FOLLOWUPS
+      ? `\n\nIMPORTANT: You have already asked ${consecutiveFollowups} consecutive follow-ups. You MUST advance to a new topic now. Set action to "advance" and isFollowUp to false.`
+      : consecutiveFollowups === 1
+        ? `\n\nNote: You have asked 1 follow-up on the current topic. You may ask 1 more follow-up OR advance to a new topic.`
+        : '';
+
     const messages: LLMMessage[] = [
       { role: 'system', content: ORCHESTRATOR_SYSTEM_PROMPT },
       {
         role: 'user',
-        content: `Session context:\n${contextMessage}\n\nThe interview is in progress. Based on the conversation so far, decide the next action and generate the next question (or end the interview if appropriate). Question count so far: ${currentOrder}.`,
+        content: `Session context:\n${contextMessage}\n\nThe interview is in progress. Based on the conversation so far, decide the next action and generate the next question (or end the interview if appropriate). Question count so far: ${currentOrder}.${followupWarning}`,
       },
       ...history,
       // The latest answer appended again explicitly in case it wasn't in history yet
       { role: 'user', content: transcript },
     ];
 
-    const result: OrchestratorResult = await llm.generateStructuredOutput({
+    let result: OrchestratorResult = await llm.generateStructuredOutput({
       messages,
       schema: orchestratorResultSchema,
       schemaName: ORCHESTRATOR_SCHEMA_NAME,
       temperature: 0.6,
     });
 
-    // 5. Persist the new question
+    // 6. Enforce follow-up limits and fix type labeling
+    result = enforceFollowupLimits(result, consecutiveFollowups);
+
+    // 7. Persist the new question
     await questionRepository.create({
       sessionId,
       text: result.questionText,
@@ -266,7 +359,7 @@ const realSessionService: ISessionService = {
       strongAnswerNotes: '',
     });
 
-    // 6. If the LLM decided to end, mark session completed
+    // 8. If the LLM decided to end, mark session completed
     if (result.action === 'end') {
       await sessionRepository.updateStatus(sessionId, 'completed');
       audit({
@@ -306,29 +399,50 @@ const realSessionService: ISessionService = {
       feedbackService.scoreAnswer(sessionId, lastQuestion._id.toString(), transcript).catch(() => {});
     }
 
-    // 2. Build lean payload
+    // 1b. If session is already completed (user answering the final question),
+    // just save the answer and signal done — don't call the LLM again.
+    const session = await sessionRepository.findById(sessionId);
+    if (session?.status === 'completed') {
+      yield { type: 'decision' as const, action: 'end' as const };
+      yield { type: 'done' as const, questionOrder: currentOrder - 1 };
+      return;
+    }
+
+    // 2. Count consecutive follow-ups for limit enforcement
+    const consecutiveFollowups = countConsecutiveFollowups(existingQuestions);
+
+    // 3. Build lean payload
     const contextMessage = await buildContextMessage(sessionId);
     const history = await buildConversationHistory(sessionId);
+
+    const followupWarning = consecutiveFollowups >= MAX_CONSECUTIVE_FOLLOWUPS
+      ? `\n\nIMPORTANT: You have already asked ${consecutiveFollowups} consecutive follow-ups. You MUST advance to a new topic now. Set action to "advance" and isFollowUp to false.`
+      : consecutiveFollowups === 1
+        ? `\n\nNote: You have asked 1 follow-up on the current topic. You may ask 1 more follow-up OR advance to a new topic.`
+        : '';
 
     const messages: LLMMessage[] = [
       { role: 'system', content: ORCHESTRATOR_SYSTEM_PROMPT },
       {
         role: 'user',
-        content: `Session context:\n${contextMessage}\n\nThe interview is in progress. Based on the conversation so far, decide the next action and generate the next question (or end the interview if appropriate). Question count so far: ${currentOrder}.`,
+        content: `Session context:\n${contextMessage}\n\nThe interview is in progress. Based on the conversation so far, decide the next action and generate the next question (or end the interview if appropriate). Question count so far: ${currentOrder}.${followupWarning}`,
       },
       ...history,
       { role: 'user', content: transcript },
     ];
 
-    // 3. Get structured decision from LLM
-    const result: OrchestratorResult = await llm.generateStructuredOutput({
+    // 4. Get structured decision from LLM
+    let result: OrchestratorResult = await llm.generateStructuredOutput({
       messages,
       schema: orchestratorResultSchema,
       schemaName: ORCHESTRATOR_SCHEMA_NAME,
       temperature: 0.6,
     });
 
-    // 4. Yield chunks in order
+    // 5. Enforce follow-up limits and fix type labeling
+    result = enforceFollowupLimits(result, consecutiveFollowups);
+
+    // 6. Yield chunks in order
     yield { type: 'decision' as const, action: result.action };
     yield {
       type: 'question' as const,
@@ -337,7 +451,7 @@ const realSessionService: ISessionService = {
       isFollowUp: result.isFollowUp,
     };
 
-    // 5. Persist
+    // 7. Persist
     await questionRepository.create({
       sessionId,
       text: result.questionText,
