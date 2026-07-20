@@ -1,9 +1,12 @@
 import type { Metadata, Viewport } from 'next';
+import Script from 'next/script';
 import { Bricolage_Grotesque, Geist, Geist_Mono } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import { SITE } from '@/lib/site';
 import ThemeRegistry from '@/components/ThemeRegistry';
 import '@/styles/globals.scss';
+
+const GA_MEASUREMENT_ID = 'G-0722WKFW57';
 
 // Distinctive display face + clean body + mono for labels. Exposed as CSS
 // variables so styling stays in SCSS and components never import fonts
@@ -82,6 +85,18 @@ export default function RootLayout({
           <ThemeRegistry>{children}</ThemeRegistry>
         </ClerkProvider>
       </body>
+      <Script
+        src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+        strategy="afterInteractive"
+      />
+      <Script id="google-analytics" strategy="afterInteractive">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', '${GA_MEASUREMENT_ID}');
+        `}
+      </Script>
     </html>
   );
 }
