@@ -16,6 +16,7 @@ import Settings from './pages/Settings';
 import MicCheck from './pages/MicCheck';
 import VoiceConsent from './pages/VoiceConsent';
 import InterviewSession from './pages/InterviewSession';
+import FeedbackReport from './pages/FeedbackReport';
 import SignIn from './pages/SignIn';
 
 function NavigationListener() {
@@ -60,6 +61,7 @@ function AppRoutes() {
           <Route path="/interview/mic-check" element={<MicCheck />} />
           <Route path="/interview/consent" element={<VoiceConsent />} />
           <Route path="/interview/session" element={<InterviewSession />} />
+          <Route path="/interview/feedback" element={<FeedbackReport />} />
         </Routes>
       </IAPProvider>
     </>
