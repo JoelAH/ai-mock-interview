@@ -1,0 +1,35 @@
+{
+  "name": "devmockview-desktop",
+  "version": "1.0.0",
+  "description": "DevMockView — AI-powered mock interview practice for macOS",
+  "author": "DevMockView",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "dist/main/main.js",
+  "scripts": {
+    "dev": "concurrently -n vite,electron \"npm run dev:vite\" \"npm run dev:electron\"",
+    "dev:vite": "vite",
+    "dev:electron": "wait-on http://localhost:5173 && tsc -p tsconfig.main.json && electron .",
+    "build": "tsc -p tsconfig.main.json && vite build",
+    "package": "npm run build && electron-builder --mac --config electron-builder.yml",
+    "package:mas": "npm run build && electron-builder --mac mas --config electron-builder.yml",
+    "package:dmg": "npm run build && electron-builder --mac dmg --config electron-builder.yml",
+    "typecheck": "tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.renderer.json --noEmit"
+  },
+  "dependencies": {
+    "electron-store": "8.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "@vitejs/plugin-react": "4.3.4",
+    "concurrently": "9.1.0",
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "typescript": "5.6.3",
+    "vite": "6.0.3",
+    "wait-on": "8.0.1"
+  }
+}

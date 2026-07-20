@@ -1,0 +1,46 @@
+appId: com.devmockview.desktop
+productName: DevMockView
+copyright: Copyright © 2024 DevMockView
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - dist/**/*
+  - "!node_modules/**/*"
+  - node_modules/electron-store/**/*
+
+mac:
+  category: public.app-category.education
+  target:
+    - target: dmg
+      arch:
+        - universal
+    - target: mas
+      arch:
+        - universal
+  icon: build/icon.icns
+  darkModeSupport: true
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  protocols:
+    - name: DevMockView
+      schemes:
+        - devmockview
+
+mas:
+  entitlements: build/entitlements.mas.plist
+  entitlementsInherit: build/entitlements.mas.inherit.plist
+  provisioningProfile: build/embedded.provisionprofile
+
+dmg:
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
