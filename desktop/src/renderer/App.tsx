@@ -13,6 +13,7 @@ import Dashboard from './pages/Dashboard';
 import NewInterview from './pages/NewInterview';
 import History from './pages/History';
 import Settings from './pages/Settings';
+import MicCheck from './pages/MicCheck';
 import SignIn from './pages/SignIn';
 
 function NavigationListener() {
@@ -54,6 +55,7 @@ function AppRoutes() {
             <Route path="/history" element={<History />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
+          <Route path="/interview/mic-check" element={<MicCheck />} />
         </Routes>
       </IAPProvider>
     </>
