@@ -15,6 +15,7 @@ const securityHeaders = [
       "font-src 'self' data:",
       "connect-src 'self' https://clerk.devmockview.com https://*.clerk.accounts.dev https://*.deepgram.com wss://*.deepgram.com https://api.openai.com",
       "frame-src https://clerk.devmockview.com https://*.clerk.accounts.dev",
+      "worker-src 'self' blob:",
       "frame-ancestors 'none'",
     ].join('; '),
   },
