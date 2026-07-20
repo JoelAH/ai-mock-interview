@@ -16,6 +16,24 @@ const userSchema = new Schema(
       default: 'free',
     },
     subscriptionId: { type: String, default: null },
+    // Subscription source tracking — identifies which platform the active sub came from
+    subscriptionSource: {
+      type: String,
+      enum: ['lemonsqueezy', 'apple', null],
+      default: null,
+    },
+    // Apple / RevenueCat subscription fields
+    revenuecatSubscriptionId: { type: String, default: null },
+    appleSubscriptionTier: {
+      type: String,
+      enum: ['free', 'starter', 'pro', 'premium', null],
+      default: null,
+    },
+    appleSubscriptionStatus: {
+      type: String,
+      enum: ['active', 'cancelled', 'past_due', 'paused', 'trialing', 'none', null],
+      default: null,
+    },
   },
   { timestamps: true },
 );
