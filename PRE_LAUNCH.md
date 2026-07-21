@@ -25,7 +25,7 @@ have** can follow in the first few weeks.
 
 | Constant | Current value | Action |
 |----------|---------------|--------|
-| `SITE.url` | `https://devmockview.app` | Confirm this is the production domain — it drives `metadataBase`, canonical URLs, `sitemap.xml`, `robots.txt`, JSON-LD, and the OG image |
+| `SITE.url` | `https://devmockview.com` | ✅ Set — production domain confirmed |
 | `SITE.twitter` | `@devmockview` | Replace with the actual Twitter/X handle, or remove |
 
 ### Attorney review of legal documents
@@ -34,7 +34,7 @@ have** can follow in the first few weeks.
 - [ ] Have Privacy Policy (`app/privacy/page.tsx`) reviewed by a qualified attorney in your jurisdiction
 - [ ] Confirm arbitration + class-action waiver is enforceable where your primary users are located
 - [ ] Confirm the BIPA/wiretap consent wording in `VoiceConsent.tsx` satisfies the "informed, written consent" requirement in Illinois (BIPA), California (CalECPA), and any other state where you have users
-- [ ] Add a cookie/tracking consent banner if marketing analytics are added later (GDPR/ePrivacy)
+- [ ] Add a cookie/tracking consent banner — Google Analytics sets cookies (GDPR/ePrivacy requirement)
 
 ### Voice-recording consent — server persistence
 
@@ -131,8 +131,9 @@ The UI screens were built on mock data (Phase 2). They need to be wired to the r
 
 ### Analytics
 
-- [ ] Add privacy-respecting analytics (e.g. Vercel Analytics, Plausible) — if anything sets cookies, add a consent banner
-- [ ] Hook up conversion tracking on CTA clicks
+- [x] Google Analytics (gtag.js) added with measurement ID `G-0722WKFW57` (`app/layout.tsx`)
+- [x] Custom event tracking at key funnel points (`lib/analytics.ts`): `interview_setup_submitted`, `interview_start_clicked`, `mic_check_completed`, `interview_started`, `interview_completed`, `interview_abandoned`, `feedback_viewed`, `upgrade_checkout_clicked`, `plan_upgraded`, `beta_signup_submitted`
+- [ ] Add a cookie/tracking consent banner (GDPR/ePrivacy) — noted in Blockers above
 
 ### Performance
 

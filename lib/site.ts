@@ -5,9 +5,7 @@
 
 export const SITE = {
   name: 'DevMockview',
-  // Update to the production domain before launch; drives metadataBase,
-  // canonical URLs, sitemap and structured data.
-  url: 'https://devmockview.app',
+  url: 'https://devmockview.com',
   tagline: 'Rehearse the real interview, out loud.',
   description:
     'DevMockview is a voice-first AI interviewer for software engineers. Paste a job description, practice behavioral and system-design questions out loud, get adaptive follow-ups, and receive a scored report on exactly what to fix.',
