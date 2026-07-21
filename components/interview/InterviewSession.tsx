@@ -61,6 +61,9 @@ export default function InterviewSession() {
 
   const progress = phase === 'done' ? 100 : 0; // no bar until done — question count is unpredictable
 
+  // Ref to hold the TTS fallback timer so onPlaybackStart can cancel it
+  const ttsFallbackRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // ---- TTS hook: plays the question audio during "asking" phase ----
   const { speak, stop: stopTTS } = useTTS({
     onDone: () => {
@@ -70,6 +73,13 @@ export default function InterviewSession() {
         setTranscript('');
         transcriptRef.current = '';
         sttRef.current?.start();
+      }
+    },
+    onPlaybackStart: () => {
+      // Audio is actually playing — cancel the fallback timer
+      if (ttsFallbackRef.current) {
+        clearTimeout(ttsFallbackRef.current);
+        ttsFallbackRef.current = null;
       }
     },
     onError: (err) => {
@@ -187,7 +197,8 @@ export default function InterviewSession() {
 
     speak(currentQuestion.text);
 
-    // Fallback: if TTS takes too long, force transition
+    // Fallback: if TTS never starts playing within the timeout, force transition.
+    // Once audio playback begins, onPlaybackStart cancels this timer.
     const fallback = setTimeout(() => {
       if (phaseRef.current === 'asking') {
         console.warn('[InterviewSession] TTS fallback timeout — moving to listening');
@@ -198,9 +209,11 @@ export default function InterviewSession() {
         sttRef.current.start();
       }
     }, TTS_FALLBACK_TIMEOUT);
+    ttsFallbackRef.current = fallback;
 
     return () => {
       clearTimeout(fallback);
+      ttsFallbackRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, currentQuestion]);

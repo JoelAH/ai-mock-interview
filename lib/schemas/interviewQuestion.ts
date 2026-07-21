@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const questionTypeEnum = z.enum(['behavioral', 'architectural', 'follow_up', 'rescue']);
+export const questionTypeEnum = z.enum(['behavioral', 'technical', 'architectural', 'follow_up', 'rescue']);
 
 export const questionScoresSchema = z
   .object({

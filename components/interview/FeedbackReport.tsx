@@ -158,7 +158,7 @@ export default function FeedbackReport({
           {report.questions.map((q, idx) => (
             <Box
               key={idx}
-              className={`${styles.questionItem} ${styles[scoreColor(avgScore(q.scores))]}`}
+              className={`${styles.questionItem} ${avgScore(q.scores) != null ? styles[scoreColor(avgScore(q.scores)!)] : ''}`}
             >
               <Box
                 className={styles.questionHeader}
@@ -187,9 +187,9 @@ export default function FeedbackReport({
                 </Box>
                 <Box className={styles.questionHeaderRight}>
                   <Typography
-                    className={`${styles.questionScore} ${styles[scoreColor(avgScore(q.scores))]}`}
+                    className={`${styles.questionScore} ${avgScore(q.scores) != null ? styles[scoreColor(avgScore(q.scores)!)] : ''}`}
                   >
-                    {avgScore(q.scores)}
+                    {avgScore(q.scores) ?? '—'}
                   </Typography>
                   <IconButton
                     size="small"
@@ -283,11 +283,11 @@ function MiniScore({ label, value }: { label: string; value: number }) {
   );
 }
 
-function avgScore(scores: { relevance?: number; depth?: number; clarity?: number } | null): number {
-  if (!scores) return 0;
+function avgScore(scores: { relevance?: number; depth?: number; clarity?: number } | null): number | null {
+  if (!scores) return null;
   const vals = [scores.relevance, scores.depth, scores.clarity].filter(
     (v): v is number => v != null,
   );
-  if (vals.length === 0) return 0;
+  if (vals.length === 0) return null;
   return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
 }

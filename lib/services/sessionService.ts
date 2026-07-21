@@ -72,14 +72,16 @@ Follow-up limits (STRICT — you MUST obey these):
 - A good interview covers breadth, not just depth. Aim for 4-6 distinct topics across the session.
 
 Question type labeling:
-- When isFollowUp is true, questionType MUST be "follow_up". Never label a follow-up as "behavioral" or "architectural".
-- Use "behavioral" only for NEW standalone behavioral questions (not follow-ups).
-- Use "architectural" only for NEW standalone technical/system design questions (not follow-ups).
+- When isFollowUp is true, questionType MUST be "follow_up". Never label a follow-up as "behavioral", "technical", or "architectural".
+- Use "behavioral" only for NEW standalone behavioral questions — these ask about past experiences, teamwork, leadership, conflict resolution, or decision-making processes (the STAR-method style).
+- Use "technical" for NEW standalone questions about specific technologies, languages, frameworks, tools, algorithms, data structures, coding patterns, or domain knowledge (e.g. "How do you design a PostgreSQL schema?", "Explain event-driven architecture", "What strategies do you use for caching?").
+- Use "architectural" for NEW standalone system design questions that ask the candidate to design, scale, or evaluate a whole system or major component (e.g. "Design a URL shortener", "How would you scale this service to 10x traffic?").
 - Use "rescue" when rephrasing or offering a hint on the current topic.
+- Rule of thumb: if the question tests *knowledge of a specific technology or concept*, it's "technical". If it asks them to *design or architect a system end-to-end*, it's "architectural". If it asks about *how they handled a situation or made a decision*, it's "behavioral".
 
 Question distribution:
 - Prioritize technical and architectural questions that probe the candidate's understanding of the technologies, systems, and patterns mentioned in the role/stack/focus areas.
-- Aim for roughly 60-70% technical/architectural questions and 30-40% behavioral questions.
+- Aim for roughly 40-50% technical questions, 20-30% architectural questions, and 20-30% behavioral questions.
 - Behavioral questions should focus on technical leadership, decision-making, and problem-solving — not generic "meetings and collaboration" topics.
 - Draw questions directly from the tech stack and focus areas provided in the session context.
 
@@ -184,7 +186,7 @@ function enforceFollowupLimits(
       ...result,
       action: 'advance',
       isFollowUp: false,
-      questionType: result.questionType === 'follow_up' ? 'architectural' : result.questionType,
+      questionType: result.questionType === 'follow_up' ? 'technical' : result.questionType,
     };
   }
 

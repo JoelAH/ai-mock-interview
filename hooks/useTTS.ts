@@ -16,19 +16,23 @@ import { useCallback, useRef } from 'react';
 interface UseTTSOptions {
   /** Called when audio finishes playing */
   onDone?: () => void;
+  /** Called when audio playback actually begins (buffer decoded and source started) */
+  onPlaybackStart?: () => void;
   /** Called if TTS fails (playback will be skipped) */
   onError?: (error: Error) => void;
 }
 
-export function useTTS({ onDone, onError }: UseTTSOptions = {}) {
+export function useTTS({ onDone, onPlaybackStart, onError }: UseTTSOptions = {}) {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   // Keep callbacks fresh without re-creating speak()
   const onDoneRef = useRef(onDone);
+  const onPlaybackStartRef = useRef(onPlaybackStart);
   const onErrorRef = useRef(onError);
   onDoneRef.current = onDone;
+  onPlaybackStartRef.current = onPlaybackStart;
   onErrorRef.current = onError;
 
   /**
@@ -97,6 +101,7 @@ export function useTTS({ onDone, onError }: UseTTSOptions = {}) {
       };
 
       source.start(0);
+      onPlaybackStartRef.current?.();
     } catch (err) {
       if ((err as Error).name === 'AbortError') return;
       console.error('[useTTS] Playback failed:', err);
