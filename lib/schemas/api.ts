@@ -61,6 +61,9 @@ export const turnChunkSchema = z.discriminatedUnion('type', [
     data: z.string(),
   }),
   z.object({
+    type: z.literal('scoring'),
+  }),
+  z.object({
     type: z.literal('done'),
     questionOrder: z.number().int(),
   }),

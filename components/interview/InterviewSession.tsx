@@ -24,7 +24,7 @@ import styles from './session.module.scss';
  * - thinking: interviewer is processing (API call in progress)
  * - done: session complete
  */
-type TurnPhase = 'loading' | 'asking' | 'listening' | 'thinking' | 'done';
+type TurnPhase = 'loading' | 'asking' | 'listening' | 'thinking' | 'scoring' | 'done';
 
 /** Fallback timeout if TTS fails — ensures the interview can still proceed */
 const TTS_FALLBACK_TIMEOUT = 15000;
@@ -230,8 +230,7 @@ export default function InterviewSession() {
     if (isLastQuestionRef.current) {
       setPhase('thinking');
       try {
-        // Send the final answer to be persisted (the server already marked
-        // the session as completed, but we still need to save this answer)
+        // Send the final answer to be persisted and scored
         const response = await fetch('/api/session/turn', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -239,13 +238,30 @@ export default function InterviewSession() {
         });
 
         if (response.ok) {
-          // Consume the stream — the server will persist the answer
-          // and return an 'end' action again (which we can ignore)
+          // Parse the SSE stream to detect the scoring phase
           const reader = response.body?.getReader();
           if (reader) {
+            const decoder = new TextDecoder();
+            let buffer = '';
             while (true) {
-              const { done } = await reader.read();
+              const { done, value } = await reader.read();
               if (done) break;
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop() ?? '';
+              for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                const data = line.slice(6).trim();
+                if (!data) continue;
+                try {
+                  const chunk = JSON.parse(data);
+                  if (chunk.type === 'scoring') {
+                    setPhase('scoring');
+                  }
+                } catch {
+                  // Skip malformed chunks
+                }
+              }
             }
           }
         }
@@ -325,17 +341,17 @@ export default function InterviewSession() {
     <Box className={styles.page}>
       <Box className={styles.container}>
         {/* Progress header */}
-        <Box className={styles.header} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="body2" color="text.secondary">
-            Question {questionsAsked}
-          </Typography>
-          {phase !== 'done' && phase !== 'loading' && (
+        <Box className={styles.header}>
+          <span className={styles.questionCount}>
+            Q{questionsAsked}
+          </span>
+          {phase !== 'done' && phase !== 'loading' && phase !== 'scoring' && (
             <Button
               variant="text"
               size="small"
               startIcon={<CloseIcon />}
               onClick={handleEndInterview}
-              sx={{ color: 'text.secondary' }}
+              sx={{ color: 'text.secondary', marginLeft: 'auto' }}
               aria-label="End interview early"
             >
               End interview
@@ -413,6 +429,12 @@ export default function InterviewSession() {
                   <Box className={styles.statusBadge} data-phase="thinking">
                     <span className={styles.pulsingDot} />
                     <Typography variant="body2">Interviewer is thinking...</Typography>
+                  </Box>
+                )}
+                {phase === 'scoring' && (
+                  <Box className={styles.statusBadge} data-phase="scoring">
+                    <span className={styles.pulsingDot} />
+                    <Typography variant="body2">Scoring your answer...</Typography>
                   </Box>
                 )}
               </Box>

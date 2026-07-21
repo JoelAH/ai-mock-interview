@@ -294,24 +294,30 @@ const realSessionService: ISessionService = {
     const currentOrder = existingQuestions.length;
 
     // 2. Save the transcript to the most recent question (the one being answered)
-    const lastQuestion = existingQuestions[existingQuestions.length - 1];
-    if (lastQuestion) {
-      await questionRepository.setAnswer(lastQuestion._id.toString(), transcript);
-      // Score the answer in the background (fire-and-forget — don't block the turn)
-      feedbackService.scoreAnswer(sessionId, lastQuestion._id.toString(), transcript).catch(() => {});
+    const questionBeingAnswered = existingQuestions[existingQuestions.length - 1];
+    if (questionBeingAnswered) {
+      await questionRepository.setAnswer(questionBeingAnswered._id.toString(), transcript);
     }
 
     // 2b. If session is already completed (user answering the final question),
-    // just save the answer and signal done — don't call the LLM again.
+    // await scoring so the feedback report has scores immediately, then signal done.
     const session = await sessionRepository.findById(sessionId);
     if (session?.status === 'completed') {
+      if (questionBeingAnswered && transcript.trim()) {
+        await feedbackService.scoreAnswer(sessionId, questionBeingAnswered._id.toString(), transcript);
+      }
       return {
         questionText: '',
-        questionType: 'behavioral',
+        questionType: 'technical',
         isFollowUp: false,
         questionOrder: currentOrder - 1,
         action: 'end',
       };
+    }
+
+    // For non-final turns, score in the background (fire-and-forget)
+    if (questionBeingAnswered && transcript.trim()) {
+      feedbackService.scoreAnswer(sessionId, questionBeingAnswered._id.toString(), transcript).catch(() => {});
     }
 
     // 3. Count consecutive follow-ups for limit enforcement
@@ -394,20 +400,27 @@ const realSessionService: ISessionService = {
     // 1. Save transcript to current question
     const existingQuestions = await questionRepository.findBySessionId(sessionId);
     const currentOrder = existingQuestions.length;
-    const lastQuestion = existingQuestions[existingQuestions.length - 1];
-    if (lastQuestion) {
-      await questionRepository.setAnswer(lastQuestion._id.toString(), transcript);
-      // Score the answer in the background (fire-and-forget — don't block the stream)
-      feedbackService.scoreAnswer(sessionId, lastQuestion._id.toString(), transcript).catch(() => {});
+    const questionBeingAnswered = existingQuestions[existingQuestions.length - 1];
+    if (questionBeingAnswered) {
+      await questionRepository.setAnswer(questionBeingAnswered._id.toString(), transcript);
     }
 
     // 1b. If session is already completed (user answering the final question),
-    // just save the answer and signal done — don't call the LLM again.
+    // await scoring so the feedback report has scores immediately.
     const session = await sessionRepository.findById(sessionId);
     if (session?.status === 'completed') {
+      if (questionBeingAnswered && transcript.trim()) {
+        yield { type: 'scoring' as const };
+        await feedbackService.scoreAnswer(sessionId, questionBeingAnswered._id.toString(), transcript);
+      }
       yield { type: 'decision' as const, action: 'end' as const };
       yield { type: 'done' as const, questionOrder: currentOrder - 1 };
       return;
+    }
+
+    // For non-final turns, score in the background (fire-and-forget)
+    if (questionBeingAnswered && transcript.trim()) {
+      feedbackService.scoreAnswer(sessionId, questionBeingAnswered._id.toString(), transcript).catch(() => {});
     }
 
     // 2. Count consecutive follow-ups for limit enforcement
