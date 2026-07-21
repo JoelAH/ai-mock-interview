@@ -263,32 +263,35 @@ export default function SetupReview() {
 
 /** Culture signals by seniority level */
 const CULTURE_BY_LEVEL: Record<string, string[]> = {
-  Junior: ['mentorship', 'growth-oriented', 'collaborative', 'learning culture'],
-  Intermediate: ['ownership', 'collaboration', 'continuous improvement', 'autonomy'],
-  Senior: ['ownership', 'technical leadership', 'mentoring', 'cross-team collaboration', 'high standards'],
-  Staff: ['technical vision', 'organizational influence', 'mentoring', 'strategic thinking', 'ownership'],
+  Junior: ['structured onboarding', 'growth-oriented', 'collaborative', 'learning culture', 'supportive team'],
+  Intermediate: ['ownership', 'collaboration', 'continuous improvement', 'autonomy', 'iterative delivery'],
+  Senior: ['technical leadership', 'mentoring others', 'cross-team collaboration', 'high standards', 'ownership'],
+  Staff: ['technical vision', 'organizational influence', 'mentoring others', 'strategic thinking', 'driving alignment across teams'],
 };
 
 /** Focus areas by role */
 const FOCUS_BY_ROLE: Record<string, string[]> = {
-  'Frontend Engineer': ['UI/UX implementation', 'performance optimization', 'accessibility', 'component architecture'],
-  'Backend Engineer': ['API design', 'data modeling', 'scalability', 'reliability'],
-  'Full-Stack Engineer': ['end-to-end feature delivery', 'API design', 'frontend architecture', 'system integration'],
-  'Engineering Manager': ['team leadership', 'project delivery', 'hiring', 'technical strategy', 'stakeholder management'],
-  'DevOps / SRE': ['infrastructure automation', 'observability', 'incident response', 'CI/CD pipelines', 'reliability'],
-  'Platform Engineer': ['developer experience', 'infrastructure abstraction', 'scalability', 'service mesh', 'CI/CD'],
-  'QA Engineer': ['test strategy', 'automation frameworks', 'quality metrics', 'CI integration', 'regression testing'],
+  'Frontend Engineer': ['UI/UX implementation', 'performance optimization', 'accessibility', 'component architecture', 'state management', 'responsive design'],
+  'Backend Engineer': ['API design', 'data modeling', 'scalability', 'reliability', 'security', 'concurrency and async patterns'],
+  'Full-Stack Engineer': ['end-to-end feature delivery', 'API design', 'frontend architecture', 'database design', 'system integration'],
+  'Engineering Manager': ['team leadership', 'project delivery', 'hiring and talent development', 'technical strategy', 'stakeholder management', 'performance management'],
+  'DevOps / SRE': ['infrastructure automation', 'observability', 'incident response', 'CI/CD pipelines', 'reliability', 'capacity planning'],
+  'Platform Engineer': ['developer experience', 'infrastructure abstraction', 'scalability', 'internal tooling', 'CI/CD', 'platform reliability'],
+  'QA Engineer': ['test strategy', 'automation frameworks', 'quality metrics', 'CI integration', 'regression testing', 'risk assessment'],
 };
 
-/** Senior+ levels get architecture and tradeoffs added to focus areas */
+/** Senior+ levels get additional focus areas reflecting broader scope */
 const SENIOR_FOCUS_EXTRAS = ['architecture design', 'technical tradeoffs', 'system design'];
+const STAFF_FOCUS_EXTRAS = ['architecture design', 'technical tradeoffs', 'system design', 'technical roadmapping', 'cross-org alignment'];
 
 function buildPresetJdText(role: string, level: string, tech: string[]): string {
   const culture = CULTURE_BY_LEVEL[level] ?? CULTURE_BY_LEVEL['Intermediate'];
   let focusAreas = FOCUS_BY_ROLE[role] ?? ['problem solving', 'code quality', 'collaboration'];
 
-  // Senior+ roles always include architecture/tradeoffs
-  if (['Senior', 'Staff'].includes(level)) {
+  // Senior+ roles get architecture/tradeoffs; Staff gets broader strategic extras
+  if (level === 'Staff') {
+    focusAreas = [...focusAreas, ...STAFF_FOCUS_EXTRAS.filter((f) => !focusAreas.includes(f))];
+  } else if (level === 'Senior') {
     focusAreas = [...focusAreas, ...SENIOR_FOCUS_EXTRAS.filter((f) => !focusAreas.includes(f))];
   }
 
