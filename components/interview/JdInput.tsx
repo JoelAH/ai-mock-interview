@@ -13,6 +13,7 @@ import Paper from '@mui/material/Paper';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 import { JD_TEXT_MAX_LENGTH } from '@/lib/config/limits';
+import { trackInterviewSetupSubmitted } from '@/lib/analytics';
 import styles from './setup.module.scss';
 
 const PRESETS = [
@@ -103,6 +104,7 @@ export default function JdInput() {
         };
 
     sessionStorage.setItem('jd-input', JSON.stringify(payload));
+    trackInterviewSetupSubmitted(mode, mode === 'preset' ? PRESETS[selectedPreset!].role : undefined);
     router.push('/interview/setup');
   };
 

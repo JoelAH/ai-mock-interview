@@ -22,6 +22,7 @@ import TimerIcon from '@mui/icons-material/Timer';
 import CategoryIcon from '@mui/icons-material/Category';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import type { JdParseResponse } from '@/lib/schemas';
+import { trackInterviewStartClicked } from '@/lib/analytics';
 import styles from './setup.module.scss';
 
 const INTERVIEW_TYPE_LABELS: Record<string, string> = {
@@ -241,7 +242,10 @@ export default function SetupReview() {
             variant="contained"
             size="large"
             startIcon={<PlayArrowIcon />}
-            onClick={() => router.push('/mic-check')}
+            onClick={() => {
+              trackInterviewStartClicked(interviewType);
+              router.push('/mic-check');
+            }}
             className={styles.submitBtn}
           >
             Start interview

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { VoiceConsent, type ConsentResult } from './VoiceConsent';
 import { AudioLevelMeter } from './AudioLevelMeter';
 import { CheckIcon } from '@/components/landing/icons';
+import { trackMicCheckCompleted } from '@/lib/analytics';
 import styles from './interview.module.scss';
 
 /**
@@ -20,6 +21,7 @@ export function MicCheck() {
   const [audioDetected, setAudioDetected] = useState(false);
 
   const handleContinue = () => {
+    trackMicCheckCompleted();
     // Navigate to the live interview session (Task 10 route)
     router.push('/interview/session');
   };

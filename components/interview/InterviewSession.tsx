@@ -13,6 +13,7 @@ import DoneIcon from '@mui/icons-material/Done';
 import CloseIcon from '@mui/icons-material/Close';
 import { useTTS } from '@/hooks/useTTS';
 import { useSTT } from '@/hooks/useSTT';
+import { trackInterviewStarted, trackInterviewCompleted, trackInterviewAbandoned } from '@/lib/analytics';
 import styles from './session.module.scss';
 
 /**
@@ -117,6 +118,7 @@ export default function InterviewSession() {
           throw new Error(`Failed to start session: ${response.status}`);
         }
 
+        trackInterviewStarted(sessionId);
         await processSSEResponse(response);
       } catch (err) {
         console.error('[InterviewSession] Failed to start:', err);
@@ -237,6 +239,7 @@ export default function InterviewSession() {
       } catch {
         // Best-effort — still transition to done
       }
+      trackInterviewCompleted(sessionId, questionsAsked);
       setPhase('done');
       return;
     }
@@ -270,6 +273,8 @@ export default function InterviewSession() {
     // Stop any active audio
     stopTTS();
     sttRef.current.stop();
+
+    trackInterviewAbandoned(sessionId!, questionsAsked);
 
     // Mark session as abandoned via API, then redirect to dashboard
     if (sessionId) {

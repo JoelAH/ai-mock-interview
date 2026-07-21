@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -13,6 +13,7 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ReplayIcon from '@mui/icons-material/Replay';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import type { FeedbackReportResponse } from '@/lib/schemas';
+import { trackFeedbackViewed } from '@/lib/analytics';
 import styles from './feedback.module.scss';
 
 /** Map a 0–100 score to a color tier */
@@ -38,6 +39,12 @@ export default function FeedbackReport({
 }) {
   const router = useRouter();
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (report && !report.abandoned) {
+      trackFeedbackViewed(report.sessionId, report.overallScore ?? undefined);
+    }
+  }, [report]);
 
   if (!report) {
     return (

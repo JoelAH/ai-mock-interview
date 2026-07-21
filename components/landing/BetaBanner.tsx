@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
+import { trackBetaSignup } from '@/lib/analytics';
 import styles from './beta-banner.module.scss';
 
 export function BetaBanner() {
@@ -22,6 +23,7 @@ export function BetaBanner() {
 
       if (!res.ok) throw new Error('Request failed');
 
+      trackBetaSignup();
       setStatus('success');
       setEmail('');
     } catch {

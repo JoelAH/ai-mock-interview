@@ -6,6 +6,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { trackPlanUpgraded } from '@/lib/analytics';
 
 const POLL_INTERVAL_MS = 1500;
 const TIMEOUT_MS = 10_000;
@@ -37,6 +38,7 @@ export default function UpgradeSuccessPage() {
           if (data.tier !== 'free') {
             setTier(data.tier);
             setStatus('success');
+            trackPlanUpgraded(data.tier);
             setTimeout(() => router.replace('/dashboard'), 1500);
             return;
           }

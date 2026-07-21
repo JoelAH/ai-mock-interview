@@ -5,6 +5,7 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
+import { trackUpgradeCheckoutClicked } from '@/lib/analytics';
 import styles from './dashboard.module.scss';
 
 interface PlanUpgradeProps {
@@ -75,6 +76,7 @@ export function PlanUpgrade({ currentTier, checkoutUrls, clerkUserId, appUrl }: 
                   size="small"
                   LinkComponent="a"
                   href={url}
+                  onClick={() => trackUpgradeCheckoutClicked(plan.tier)}
                 >
                   Upgrade
                 </Button>
