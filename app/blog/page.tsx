@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { SiteHeader } from '@/components/landing/SiteHeader';
 import { SiteFooter } from '@/components/landing/SiteFooter';
 import { SITE } from '@/lib/site';
+import { BLOG_POSTS } from '@/lib/blog';
 import styles from './blog.module.scss';
 
 export const metadata: Metadata = {
@@ -11,36 +12,9 @@ export const metadata: Metadata = {
   alternates: { canonical: '/blog' },
 };
 
-export interface BlogPost {
-  slug: string;
-  title: string;
-  excerpt: string;
-  date: string;
-}
-
-export const BLOG_POSTS: BlogPost[] = [
-  {
-    slug: 'why-practicing-interviews-out-loud-beats-studying',
-    title: 'Why practicing interviews out loud beats studying silently',
-    excerpt:
-      'Reading answers in your head feels productive — until you freeze in the real room. Here is why speaking your answers changes everything.',
-    date: 'July 8, 2026',
-  },
-  {
-    slug: 'how-to-prepare-for-system-design-interview',
-    title: 'How to prepare for a system design interview in 2026',
-    excerpt:
-      'System design rounds trip up even senior engineers. A structured approach to preparation that covers scope, tradeoffs, and communication.',
-    date: 'July 8, 2026',
-  },
-  {
-    slug: 'common-behavioral-interview-mistakes-engineers-make',
-    title: 'The most common behavioral interview mistakes engineers make',
-    excerpt:
-      'Technical people tend to under-invest in behavioral prep. These are the patterns that cost offers — and how to fix them.',
-    date: 'July 8, 2026',
-  },
-];
+// Re-exported for backwards compatibility with existing imports.
+export { BLOG_POSTS };
+export type { BlogPost } from '@/lib/blog';
 
 export default function BlogPage() {
   return (

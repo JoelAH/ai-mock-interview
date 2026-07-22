@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { SiteHeader } from '@/components/landing/SiteHeader';
 import { SiteFooter } from '@/components/landing/SiteFooter';
 import { ArrowIcon } from '@/components/landing/icons';
+import { ArticleJsonLd } from '@/components/blog/ArticleJsonLd';
 import { SITE } from '@/lib/site';
 import styles from '../blog.module.scss';
 
@@ -162,6 +163,7 @@ export default function Article() {
         </article>
       </main>
       <SiteFooter />
+      <ArticleJsonLd slug="common-behavioral-interview-mistakes-engineers-make" />
     </>
   );
 }

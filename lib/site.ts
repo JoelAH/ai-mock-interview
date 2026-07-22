@@ -10,8 +10,34 @@ export const SITE = {
   description:
     'DevMockview is a voice-first AI interviewer for software engineers. Paste a job description, practice behavioral and system-design questions out loud, get adaptive follow-ups, and receive a scored report on exactly what to fix.',
   locale: 'en_US',
-  twitter: '@devmockview',
+  twitter: '@devmockview', // placeholder — update when an X account exists
 } as const;
+
+// -----------------------------------------------------------------------------
+// Author / publisher identity. Drives E-E-A-T signals in structured data and
+// llms.txt (who is behind the content). Update `name`/`sameAs` with the real
+// author and public profiles.
+// -----------------------------------------------------------------------------
+export const AUTHOR = {
+  name: 'The DevMockview Team',
+  // Public profiles / verifiable presence for the brand.
+  // These strengthen entity trust for AI engines and search.
+  sameAs: [
+    'https://www.threads.net/@joey.the.coder',
+    'https://github.com/JoelAH',
+  ] as string[],
+} as const;
+
+// A one-paragraph, plain-language elevator pitch written for AI assistants to
+// quote directly. Keep it factual and self-contained.
+export const AI_SUMMARY =
+  'DevMockview is a voice-first AI mock interview platform for software engineers. ' +
+  'Candidates paste a real job description, then practice behavioral and system-design ' +
+  '(architectural) interviews out loud in the browser. An AI interviewer asks role-tailored ' +
+  'questions, adapts with follow-up probes based on spoken answers, and produces a scored ' +
+  'report covering technical accuracy, communication, and structure — plus the single ' +
+  'highest-leverage thing to fix next. It supports roles from junior through staff, runs ' +
+  'entirely in the browser with no install, and keeps sessions private (audio retention is opt-in).';
 
 // -----------------------------------------------------------------------------
 // Legal constants. These are PLACEHOLDERS — replace with your real legal entity,
