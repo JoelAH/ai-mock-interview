@@ -1,8 +1,12 @@
 /// <reference types="vite/client" />
 
-interface AuthState {
-  isAuthenticated: boolean;
-  userId: string | null;
+interface ImportMetaEnv {
+  readonly VITE_API_BASE_URL?: string;
+  readonly VITE_CLERK_PUBLISHABLE_KEY: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
 }
 
 interface IAPProduct {
@@ -27,13 +31,6 @@ interface IAPSubscriptionInfo {
 }
 
 interface ElectronAPI {
-  // Auth
-  signIn: () => Promise<{ success: boolean }>;
-  signOut: () => Promise<{ success: boolean }>;
-  getToken: () => Promise<string | null>;
-  getAuthState: () => Promise<AuthState>;
-  onAuthStateChanged: (callback: (state: AuthState) => void) => void;
-
   // In-App Purchase
   iapCanMakePayments: () => Promise<boolean>;
   iapGetOfferings: () => Promise<IAPOffering[]>;
@@ -46,7 +43,7 @@ interface ElectronAPI {
   // Navigation (from native menu shortcuts)
   onNavigate: (callback: (route: string) => void) => void;
 
-  // Deep link (OAuth callback)
+  // Deep link
   onDeepLink: (callback: (url: string) => void) => void;
 
   // Platform

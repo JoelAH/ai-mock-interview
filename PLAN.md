@@ -24,7 +24,7 @@ Three subscription tiers, differentiated by monthly session cap and voice qualit
 | Pro | $39 | 25 | OpenAI TTS | OpenAI TTS |
 | Premium | $79 | 30 | OpenAI TTS | ElevenLabs |
 
-- **Free trial:** 1 free session, no card required, to demonstrate voice quality + feedback before conversion.
+- **Free trial:** 2 free sessions, no card required, to demonstrate voice quality + feedback before conversion.
 - **Gating:** `billingService.canCreateSession(userId)` checks the user's session count for the current calendar month against their tier cap.
 - **MVP simplification:** all tiers use OpenAI TTS at launch; Premium flips to ElevenLabs by changing one field in the tier config.
 

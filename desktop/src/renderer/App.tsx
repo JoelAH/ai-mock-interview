@@ -6,8 +6,9 @@ import {
   useNavigate,
   Navigate,
 } from 'react-router-dom';
-import { AuthProvider, useAuth } from './hooks/useAuth';
+import { ClerkProvider, SignedIn, SignedOut, useAuth } from '@clerk/clerk-react';
 import { IAPProvider } from './hooks/useIAP';
+import { setAuthFunctions } from './api/client';
 import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -19,6 +20,25 @@ import VoiceConsent from './pages/VoiceConsent';
 import InterviewSession from './pages/InterviewSession';
 import FeedbackReport from './pages/FeedbackReport';
 import SignIn from './pages/SignIn';
+
+const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+if (!CLERK_PUBLISHABLE_KEY) {
+  throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in environment');
+}
+
+/**
+ * Bridges Clerk's React auth hooks to the imperative API client singleton.
+ */
+function ClerkAuthBridge() {
+  const { getToken, signOut } = useAuth();
+
+  useEffect(() => {
+    setAuthFunctions(getToken, signOut);
+  }, [getToken, signOut]);
+
+  return null;
+}
 
 function NavigationListener() {
   const navigate = useNavigate();
@@ -32,21 +52,7 @@ function NavigationListener() {
   return null;
 }
 
-function AppRoutes() {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="app-loading">
-        <div className="app-loading-spinner" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <SignIn />;
-  }
-
+function AuthenticatedApp() {
   return (
     <>
       <NavigationListener />
@@ -72,11 +78,17 @@ function AppRoutes() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
+      <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY}>
+        <ClerkAuthBridge />
         <HashRouter>
-          <AppRoutes />
+          <SignedOut>
+            <SignIn />
+          </SignedOut>
+          <SignedIn>
+            <AuthenticatedApp />
+          </SignedIn>
         </HashRouter>
-      </AuthProvider>
+      </ClerkProvider>
     </ErrorBoundary>
   );
 }

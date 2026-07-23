@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "concurrently -n vite,electron \"npm run dev:vite\" \"npm run dev:electron\"",
     "dev:vite": "vite",
-    "dev:electron": "wait-on http://localhost:5173 && tsc -p tsconfig.main.json && electron .",
+    "dev:electron": "wait-on http://localhost:5174 && tsc -p tsconfig.main.json && electron .",
     "build": "tsc -p tsconfig.main.json && vite build",
     "package": "npm run build && electron-builder --mac --config electron-builder.yml",
     "package:mas": "npm run build && electron-builder --mac mas --config electron-builder.yml",
@@ -19,6 +19,7 @@
     "typecheck": "tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.renderer.json --noEmit"
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.61.9",
     "electron-store": "8.2.0",
     "react-router-dom": "^6.28.0"
   },

@@ -41,7 +41,7 @@ export const tierConfigs: Record<SubscriptionTier, TierConfig> = {
     tier: 'free',
     label: 'Free Trial',
     priceUsd: 0,
-    sessionsPerMonth: 1, // single trial session before a subscription is required
+    sessionsPerMonth: 2, // trial sessions before a subscription is required
     ttsProvider: 'deepgram',
     lemonVariantId: null,
   },

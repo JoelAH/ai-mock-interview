@@ -9,31 +9,156 @@ import './NewInterview.css';
 
 const JD_MAX_LENGTH = 10_000;
 
+// ---------------------------------------------------------------------------
+// Presets — mirrors the web app's JdInput component
+// ---------------------------------------------------------------------------
+
+const PRESETS = [
+  { label: 'Junior Frontend Engineer', level: 'Junior', role: 'Frontend Engineer' },
+  { label: 'Intermediate Frontend Engineer', level: 'Intermediate', role: 'Frontend Engineer' },
+  { label: 'Senior Frontend Engineer', level: 'Senior', role: 'Frontend Engineer' },
+  { label: 'Junior Backend Engineer', level: 'Junior', role: 'Backend Engineer' },
+  { label: 'Intermediate Backend Engineer', level: 'Intermediate', role: 'Backend Engineer' },
+  { label: 'Staff Backend Engineer', level: 'Staff', role: 'Backend Engineer' },
+  { label: 'Junior Full-Stack Engineer', level: 'Junior', role: 'Full-Stack Engineer' },
+  { label: 'Intermediate Full-Stack Engineer', level: 'Intermediate', role: 'Full-Stack Engineer' },
+  { label: 'Senior Full-Stack Engineer', level: 'Senior', role: 'Full-Stack Engineer' },
+  { label: 'Engineering Manager', level: 'Senior', role: 'Engineering Manager' },
+  { label: 'Intermediate DevOps / SRE', level: 'Intermediate', role: 'DevOps / SRE' },
+  { label: 'Senior DevOps / SRE', level: 'Senior', role: 'DevOps / SRE' },
+  { label: 'Staff Platform Engineer', level: 'Staff', role: 'Platform Engineer' },
+  { label: 'Junior QA Engineer', level: 'Junior', role: 'QA Engineer' },
+  { label: 'Intermediate QA Engineer', level: 'Intermediate', role: 'QA Engineer' },
+  { label: 'Senior QA Engineer', level: 'Senior', role: 'QA Engineer' },
+] as const;
+
+// ---------------------------------------------------------------------------
+// Preset JD builder — generates a synthetic JD from role/level/tech
+// ---------------------------------------------------------------------------
+
+const CULTURE_BY_LEVEL: Record<string, string[]> = {
+  Junior: ['structured onboarding', 'growth-oriented', 'collaborative', 'learning culture', 'supportive team'],
+  Intermediate: ['ownership', 'collaboration', 'continuous improvement', 'autonomy', 'iterative delivery'],
+  Senior: ['technical leadership', 'mentoring others', 'cross-team collaboration', 'high standards', 'ownership'],
+  Staff: ['technical vision', 'organizational influence', 'mentoring others', 'strategic thinking', 'driving alignment across teams'],
+};
+
+const FOCUS_BY_ROLE: Record<string, string[]> = {
+  'Frontend Engineer': ['UI/UX implementation', 'performance optimization', 'accessibility', 'component architecture', 'state management', 'responsive design'],
+  'Backend Engineer': ['API design', 'data modeling', 'scalability', 'reliability', 'security', 'concurrency and async patterns'],
+  'Full-Stack Engineer': ['end-to-end feature delivery', 'API design', 'frontend architecture', 'database design', 'system integration'],
+  'Engineering Manager': ['team leadership', 'project delivery', 'hiring and talent development', 'technical strategy', 'stakeholder management', 'performance management'],
+  'DevOps / SRE': ['infrastructure automation', 'observability', 'incident response', 'CI/CD pipelines', 'reliability', 'capacity planning'],
+  'Platform Engineer': ['developer experience', 'infrastructure abstraction', 'scalability', 'internal tooling', 'CI/CD', 'platform reliability'],
+  'QA Engineer': ['test strategy', 'automation frameworks', 'quality metrics', 'CI integration', 'regression testing', 'risk assessment'],
+};
+
+const SENIOR_FOCUS_EXTRAS = ['architecture design', 'technical tradeoffs', 'system design'];
+const STAFF_FOCUS_EXTRAS = ['architecture design', 'technical tradeoffs', 'system design', 'technical roadmapping', 'cross-org alignment'];
+
+function buildPresetJdText(role: string, level: string, tech: string[]): string {
+  const culture = CULTURE_BY_LEVEL[level] ?? CULTURE_BY_LEVEL['Intermediate'];
+  let focusAreas = FOCUS_BY_ROLE[role] ?? ['problem solving', 'code quality', 'collaboration'];
+
+  if (level === 'Staff') {
+    focusAreas = [...focusAreas, ...STAFF_FOCUS_EXTRAS.filter((f) => !focusAreas.includes(f))];
+  } else if (level === 'Senior') {
+    focusAreas = [...focusAreas, ...SENIOR_FOCUS_EXTRAS.filter((f) => !focusAreas.includes(f))];
+  }
+
+  const lines = [
+    `Role: ${level} ${role}`,
+    `Seniority: ${level}`,
+    '',
+    `We are looking for a ${level} ${role} to join our team.`,
+    '',
+    `Culture and values: ${culture.join(', ')}.`,
+    '',
+    `Key focus areas: ${focusAreas.join(', ')}.`,
+  ];
+
+  if (tech.length > 0) {
+    lines.push('', `Required technologies: ${tech.join(', ')}.`);
+  }
+
+  return lines.join('\n');
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
 type Step = 'input' | 'loading' | 'review' | 'cap-reached';
+type InputMode = 'paste' | 'preset';
 
 export default function NewInterview() {
   const [step, setStep] = useState<Step>('input');
+  const [mode, setMode] = useState<InputMode>('paste');
   const [jdText, setJdText] = useState('');
+  const [selectedPreset, setSelectedPreset] = useState<number | null>(null);
+  const [techInput, setTechInput] = useState('');
+  const [techTags, setTechTags] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [parseResult, setParseResult] = useState<JdParseResponse | null>(null);
   const { subscription } = useIAP();
 
-  async function handleAnalyze() {
-    if (!jdText.trim()) return;
+  function handleAddTech() {
+    const trimmed = techInput.trim();
+    if (trimmed && !techTags.includes(trimmed)) {
+      setTechTags([...techTags, trimmed]);
+    }
+    setTechInput('');
+  }
 
+  function handleTechKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      handleAddTech();
+    }
+  }
+
+  function handleRemoveTech(tag: string) {
+    setTechTags(techTags.filter((t) => t !== tag));
+  }
+
+  async function handleAnalyze() {
     setError(null);
+
+    let textToSend: string;
+    let sourceType: 'paste' | 'preset';
+
+    if (mode === 'paste') {
+      if (!jdText.trim()) {
+        setError('Please paste a job description to continue.');
+        return;
+      }
+      if (jdText.trim().length < 50) {
+        setError('Job description seems too short. Please paste the full text.');
+        return;
+      }
+      textToSend = jdText.trim();
+      sourceType = 'paste';
+    } else {
+      if (selectedPreset === null) {
+        setError('Please select a role preset to continue.');
+        return;
+      }
+      const preset = PRESETS[selectedPreset];
+      textToSend = buildPresetJdText(preset.role, preset.level, techTags);
+      sourceType = 'preset';
+    }
+
     setStep('loading');
 
     try {
       const result = await api.jdParse({
-        jdText: jdText.trim(),
-        sourceType: 'paste',
+        jdText: textToSend,
+        sourceType,
       });
       setParseResult(result);
       setStep('review');
     } catch (err) {
       if (err instanceof ApiRequestError && err.status === 403) {
-        // Session cap reached
         setStep('cap-reached');
         return;
       }
@@ -46,7 +171,6 @@ export default function NewInterview() {
 
   function handleConfirm() {
     if (!parseResult) return;
-    // Check if voice consent has been granted; if not, route to consent gate
     if (!hasValidConsent()) {
       window.location.hash = `#/interview/consent?sessionId=${parseResult.sessionId}`;
     } else {
@@ -177,33 +301,120 @@ export default function NewInterview() {
       <div className="new-interview-header">
         <h1 className="new-interview-title">New Interview</h1>
         <p className="new-interview-subtitle">
-          Paste a job description to start a tailored mock interview
+          Paste a job description or pick a role preset to start a tailored mock interview
         </p>
       </div>
 
-      <div className="jd-input-container">
-        <textarea
-          className="jd-textarea"
-          placeholder="Paste the full job description here…"
-          value={jdText}
-          onChange={(e) => setJdText(e.target.value)}
-          maxLength={JD_MAX_LENGTH}
-          spellCheck={false}
-          autoFocus
-        />
-        <div className="jd-input-footer">
-          <span className={`jd-char-count ${jdText.length > JD_MAX_LENGTH * 0.9 ? 'jd-char-count--warn' : ''}`}>
-            {jdText.length.toLocaleString()} / {JD_MAX_LENGTH.toLocaleString()}
-          </span>
+      {/* Mode toggle */}
+      <div className="mode-toggle">
+        <button
+          className={`mode-toggle-btn ${mode === 'paste' ? 'mode-toggle-btn--active' : ''}`}
+          onClick={() => { setMode('paste'); setError(null); }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
+            <rect x="9" y="2" width="6" height="14" rx="2" />
+            <path d="M4 10h1M19 10h1M9 16h6" />
+          </svg>
+          Paste JD
+        </button>
+        <button
+          className={`mode-toggle-btn ${mode === 'preset' ? 'mode-toggle-btn--active' : ''}`}
+          onClick={() => { setMode('preset'); setError(null); }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
+            <path d="M4 6h16M4 12h10M4 18h14" />
+          </svg>
+          Quick preset
+        </button>
+      </div>
+
+      {mode === 'paste' ? (
+        /* Paste mode */
+        <div className="jd-input-container">
+          <textarea
+            className="jd-textarea"
+            placeholder="Paste the full job description here…"
+            value={jdText}
+            onChange={(e) => setJdText(e.target.value)}
+            maxLength={JD_MAX_LENGTH}
+            spellCheck={false}
+            autoFocus
+          />
+          <div className="jd-input-footer">
+            <span className={`jd-char-count ${jdText.length > JD_MAX_LENGTH * 0.9 ? 'jd-char-count--warn' : ''}`}>
+              {jdText.length.toLocaleString()} / {JD_MAX_LENGTH.toLocaleString()}
+            </span>
+            <button
+              className="jd-analyze-btn"
+              onClick={handleAnalyze}
+              disabled={!jdText.trim()}
+            >
+              Analyze →
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* Preset mode */
+        <div className="preset-section">
+          <div className="preset-grid" role="group" aria-label="Role presets">
+            {PRESETS.map((preset, idx) => (
+              <button
+                key={preset.label}
+                className={`preset-chip ${selectedPreset === idx ? 'preset-chip--selected' : ''}`}
+                onClick={() => { setSelectedPreset(idx); setError(null); }}
+                aria-pressed={selectedPreset === idx}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+
+          {selectedPreset !== null && (
+            <div className="tech-section">
+              <p className="tech-section-label">
+                Add technologies or frameworks (optional)
+              </p>
+              <div className="tech-input-row">
+                <input
+                  className="tech-input"
+                  type="text"
+                  placeholder="e.g. React, TypeScript, AWS…"
+                  value={techInput}
+                  onChange={(e) => setTechInput(e.target.value)}
+                  onKeyDown={handleTechKeyDown}
+                  onBlur={handleAddTech}
+                  aria-label="Add technology"
+                />
+              </div>
+              {techTags.length > 0 && (
+                <div className="tech-tags" aria-label="Selected technologies">
+                  {techTags.map((tag) => (
+                    <span key={tag} className="tech-tag">
+                      {tag}
+                      <button
+                        type="button"
+                        className="tech-tag-remove"
+                        onClick={() => handleRemoveTech(tag)}
+                        aria-label={`Remove ${tag}`}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <button
-            className="jd-analyze-btn"
+            className="jd-analyze-btn jd-analyze-btn--full"
             onClick={handleAnalyze}
-            disabled={!jdText.trim()}
+            disabled={selectedPreset === null}
           >
-            Analyze
+            Start Interview →
           </button>
         </div>
-      </div>
+      )}
 
       {error && (
         <div className="jd-error">

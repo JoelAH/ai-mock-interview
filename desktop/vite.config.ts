@@ -5,13 +5,14 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   root: path.resolve(__dirname, 'src/renderer'),
+  envDir: path.resolve(__dirname),
   base: './',
   build: {
     outDir: path.resolve(__dirname, 'dist/renderer'),
     emptyOutDir: true,
   },
   server: {
-    port: 5173,
+    port: 5174,
     strictPort: true,
   },
   resolve: {

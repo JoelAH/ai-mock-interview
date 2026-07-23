@@ -49,12 +49,11 @@ if (!gotTheLock) {
   });
 
   app.whenReady().then(async () => {
-    await auth.initialize();
-    // Identify user with RevenueCat if already authenticated
-    const userId = auth.getUserId();
-    if (userId) {
-      iap.identifyUser(userId).catch(() => {});
+    // Set dock icon in dev mode (packaged builds use icon.icns automatically)
+    if (isDev && app.dock) {
+      app.dock.setIcon(path.join(__dirname, '../../build/icon-source.png'));
     }
+    await auth.initialize();
     registerIpcHandlers();
     createAppMenu();
     createWindow();
@@ -76,27 +75,6 @@ app.on('window-all-closed', () => {
 // --- IPC Handlers ---
 
 function registerIpcHandlers(): void {
-  ipcMain.handle('auth:sign-in', async () => {
-    await auth.signIn();
-    return { success: true };
-  });
-
-  ipcMain.handle('auth:sign-out', async () => {
-    await auth.signOut();
-    return { success: true };
-  });
-
-  ipcMain.handle('auth:get-token', () => {
-    return auth.getToken();
-  });
-
-  ipcMain.handle('auth:get-state', () => {
-    return {
-      isAuthenticated: auth.isAuthenticated(),
-      userId: auth.getUserId(),
-    };
-  });
-
   // --- IAP ---
   ipcMain.handle('iap:can-make-payments', () => {
     return iap.canMakePayments();
@@ -128,6 +106,7 @@ function createWindow(): void {
     ...bounds,
     minWidth: 900,
     minHeight: 600,
+    icon: path.join(__dirname, '../../build/icon-source.png'),
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 16, y: 16 },
     vibrancy: 'sidebar',
@@ -164,7 +143,7 @@ function createWindow(): void {
   });
 
   if (isDev) {
-    mainWindow.loadURL('http://localhost:5173');
+    mainWindow.loadURL('http://localhost:5174');
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
     mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
@@ -260,16 +239,6 @@ function sendNavigation(route: string): void {
 function handleDeepLink(url: string): void {
   if (!mainWindow) return;
 
-  // Route auth callbacks to the auth manager
-  if (url.startsWith(`${PROTOCOL}://auth/`)) {
-    auth.handleCallback(url).then((success) => {
-      if (success && mainWindow) {
-        mainWindow.focus();
-      }
-    });
-    return;
-  }
-
-  // Forward other deep links to the renderer
+  // Forward deep links to the renderer (for potential future use)
   mainWindow.webContents.send('deep-link', url);
 }

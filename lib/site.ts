@@ -166,11 +166,11 @@ export const PLANS: Plan[] = [
     name: 'Free trial',
     price: '$0',
     cadence: 'no card required',
-    blurb: 'Feel the loop with one full interview.',
+    blurb: 'Feel the loop with two full interviews.',
     cta: 'Start free',
     featured: false,
     perks: [
-      '1 full voice interview',
+      '2 full voice interviews',
       'Job-description tailoring',
       'Overall score + summary',
       'Runs in your browser',

@@ -1,8 +1,8 @@
 /**
  * Typed API client for the DevMockView backend.
  *
- * All requests are authenticated with the bearer token from the Electron
- * auth layer. Handles 401 responses by triggering sign-out.
+ * Authenticated via Clerk — a token getter is injected at app startup so the
+ * client can attach bearer tokens without depending on React hooks directly.
  */
 
 import type {
@@ -23,10 +23,26 @@ import { parseSSEStream } from './sse';
 // Configuration
 // ---------------------------------------------------------------------------
 
-// Base URL for the deployed API. In dev, you can override via Vite env.
 const API_BASE_URL =
-  (import.meta as unknown as { env?: { VITE_API_BASE_URL?: string } }).env
-    ?.VITE_API_BASE_URL || 'https://devmockview.com';
+  import.meta.env.VITE_API_BASE_URL || 'https://devmockview.com';
+
+// ---------------------------------------------------------------------------
+// Token provider — set by the React layer (ClerkTokenProvider component)
+// ---------------------------------------------------------------------------
+
+type TokenGetter = () => Promise<string | null>;
+type SignOutFn = () => Promise<void>;
+
+let _getToken: TokenGetter = async () => null;
+let _signOut: SignOutFn = async () => {};
+
+/**
+ * Called once from the React tree to wire up Clerk's auth to the API client.
+ */
+export function setAuthFunctions(getToken: TokenGetter, signOut: SignOutFn): void {
+  _getToken = getToken;
+  _signOut = signOut;
+}
 
 // ---------------------------------------------------------------------------
 // Core fetch wrapper
@@ -34,7 +50,7 @@ const API_BASE_URL =
 
 class ApiClient {
   private async getHeaders(): Promise<HeadersInit> {
-    const token = await window.electronAPI.getToken();
+    const token = await _getToken();
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
@@ -59,8 +75,7 @@ class ApiClient {
     });
 
     if (response.status === 401) {
-      // Token expired or invalid — trigger sign-out
-      await window.electronAPI.signOut();
+      await _signOut();
       throw new ApiUnauthorizedError('Session expired. Please sign in again.');
     }
 
@@ -93,7 +108,7 @@ class ApiClient {
     });
 
     if (response.status === 401) {
-      await window.electronAPI.signOut();
+      await _signOut();
       throw new ApiUnauthorizedError('Session expired. Please sign in again.');
     }
 
@@ -115,9 +130,6 @@ class ApiClient {
   // API Methods
   // -------------------------------------------------------------------------
 
-  /**
-   * Parse a job description and create an interview session.
-   */
   async jdParse(data: JdParseRequest): Promise<JdParseResponse> {
     return this.request<JdParseResponse>('/api/jd/parse', {
       method: 'POST',
@@ -125,11 +137,6 @@ class ApiClient {
     });
   }
 
-  /**
-   * Send a turn in the interview and receive SSE-streamed chunks.
-   * Use `transcript: '__START__'` to initiate the session.
-   * Use `transcript: '__ABANDON__'` to abandon.
-   */
   async sessionTurn(
     data: SessionTurnRequest
   ): Promise<AsyncGenerator<TurnChunk, void, undefined>> {
@@ -140,9 +147,6 @@ class ApiClient {
     return parseSSEStream<TurnChunk>(response);
   }
 
-  /**
-   * Convert text to speech. Returns raw audio bytes as an ArrayBuffer.
-   */
   async sessionTts(data: TtsRequest): Promise<ArrayBuffer> {
     const response = await this.requestRaw('/api/session/tts', {
       method: 'POST',
@@ -151,9 +155,6 @@ class ApiClient {
     return response.arrayBuffer();
   }
 
-  /**
-   * Generate a feedback report for a completed session.
-   */
   async sessionFeedback(data: FeedbackRequest): Promise<FeedbackReportResponse> {
     return this.request<FeedbackReportResponse>('/api/session/feedback', {
       method: 'POST',
@@ -161,18 +162,12 @@ class ApiClient {
     });
   }
 
-  /**
-   * Get a scoped Deepgram token for WebSocket STT.
-   */
   async deepgramToken(): Promise<DeepgramTokenResponse> {
     return this.request<DeepgramTokenResponse>('/api/deepgram/token', {
       method: 'POST',
     });
   }
 
-  /**
-   * Get the current user's billing/subscription status.
-   */
   async billingStatus(): Promise<BillingStatusResponse> {
     return this.request<BillingStatusResponse>('/api/billing/status', {
       method: 'GET',
