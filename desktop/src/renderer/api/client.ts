@@ -15,6 +15,7 @@ import type {
   FeedbackReportResponse,
   DeepgramTokenResponse,
   BillingStatusResponse,
+  DashboardData,
   ApiError,
 } from './types';
 import { parseSSEStream } from './sse';
@@ -170,6 +171,12 @@ class ApiClient {
 
   async billingStatus(): Promise<BillingStatusResponse> {
     return this.request<BillingStatusResponse>('/api/billing/status', {
+      method: 'GET',
+    });
+  }
+
+  async dashboard(): Promise<DashboardData> {
+    return this.request<DashboardData>('/api/dashboard', {
       method: 'GET',
     });
   }

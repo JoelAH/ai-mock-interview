@@ -7,6 +7,9 @@ import * as iap from './iap';
 const PROTOCOL = 'devmockview';
 const isDev = !app.isPackaged;
 
+// Set app name for the macOS menu bar (in dev, defaults to "Electron" otherwise)
+app.name = 'DevMockView';
+
 // Persist window bounds between launches
 const store = new Store<{ windowBounds: Electron.Rectangle }>({
   defaults: {
@@ -162,7 +165,21 @@ function createAppMenu(): void {
     {
       label: app.name,
       submenu: [
-        { role: 'about' },
+        {
+          label: `About ${app.name}`,
+          click: () => {
+            const { dialog, nativeImage } = require('electron');
+            const iconPath = path.join(__dirname, '../../build/icon-source.png');
+            const icon = nativeImage.createFromPath(iconPath);
+            dialog.showMessageBox({
+              type: 'info',
+              icon: icon.isEmpty() ? undefined : icon,
+              title: `About ${app.name}`,
+              message: app.name,
+              detail: `Version 1.0.0\n\nAI-powered mock interview practice for macOS.\n\n© 2026 DevMockView`,
+            });
+          },
+        },
         { type: 'separator' },
         {
           label: 'Settings…',

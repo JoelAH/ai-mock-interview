@@ -34,14 +34,27 @@ export default function Dashboard() {
   async function loadDashboard() {
     setIsLoading(true);
     try {
-      const billing = await api.billingStatus();
+      const [billing, dashboard] = await Promise.all([
+        api.billingStatus(),
+        api.dashboard(),
+      ]);
 
-      // TODO: Replace with actual dashboard API call when available
-      // For now, use billing status and empty session list
+      // Build score history from completed sessions
+      const scoreHistory = dashboard.sessions
+        .filter((s) => s.overallScore !== null && s.status === 'completed')
+        .map((s) => ({ date: s.createdAt, score: s.overallScore! }))
+        .reverse();
+
       setData({
         billing,
-        sessions: [],
-        scoreHistory: [],
+        sessions: dashboard.sessions.map((s) => ({
+          sessionId: s.sessionId,
+          interviewType: s.interviewType,
+          overallScore: s.overallScore,
+          createdAt: s.createdAt,
+          status: s.status,
+        })),
+        scoreHistory,
       });
     } catch (err) {
       console.error('[Dashboard] Failed to load:', err);

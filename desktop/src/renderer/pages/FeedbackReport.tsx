@@ -67,6 +67,13 @@ export default function FeedbackReport() {
 
   return (
     <div className="feedback">
+      <button
+        className="feedback-back"
+        onClick={() => window.history.back()}
+      >
+        ← Back
+      </button>
+
       <div className="feedback-header">
         <h1 className="feedback-title">Feedback Report</h1>
         <p className="feedback-subtitle">

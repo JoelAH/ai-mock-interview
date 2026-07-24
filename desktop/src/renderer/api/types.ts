@@ -120,6 +120,25 @@ export interface BillingStatusResponse {
 }
 
 // ---------------------------------------------------------------------------
+// Dashboard — GET /api/dashboard
+// ---------------------------------------------------------------------------
+
+export interface SessionSummary {
+  sessionId: string;
+  interviewType: InterviewType;
+  status: SessionStatus;
+  overallScore: number | null;
+  createdAt: string;
+  parsedSignals: ParsedSignals | null;
+}
+
+export interface DashboardData {
+  sessions: SessionSummary[];
+  totalSessions: number;
+  averageScore: number | null;
+}
+
+// ---------------------------------------------------------------------------
 // API Error shape
 // ---------------------------------------------------------------------------
 

@@ -87,3 +87,15 @@
   font-size: 13px;
   color: rgba(255, 255, 255, 0.35);
 }
+
+.session-list-item--clickable {
+  cursor: pointer;
+}
+
+.session-list-item--clickable:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.session-list-item--clickable:active {
+  background: rgba(255, 255, 255, 0.04);
+}

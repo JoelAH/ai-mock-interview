@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../api/client';
-import type { BillingStatusResponse } from '../api/types';
 import SessionList from '../components/SessionList';
 import './History.css';
 
@@ -23,11 +22,16 @@ export default function History() {
   async function loadHistory() {
     setIsLoading(true);
     try {
-      // billingStatus gives us basic info; a dedicated history endpoint would be ideal.
-      // For now we rely on the billing/dashboard data pattern.
-      await api.billingStatus();
-      // TODO: Replace with dedicated GET /api/sessions/history endpoint when available
-      setSessions([]);
+      const dashboard = await api.dashboard();
+      setSessions(
+        dashboard.sessions.map((s) => ({
+          sessionId: s.sessionId,
+          interviewType: s.interviewType,
+          overallScore: s.overallScore,
+          createdAt: s.createdAt,
+          status: s.status,
+        })),
+      );
     } catch {
       // Silently fail — show empty state
     } finally {

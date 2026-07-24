@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import './SessionList.css';
 
 interface SessionItem {
@@ -21,6 +22,8 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 export default function SessionList({ sessions }: Props) {
+  const navigate = useNavigate();
+
   if (sessions.length === 0) {
     return (
       <div className="session-list-empty">
@@ -29,10 +32,25 @@ export default function SessionList({ sessions }: Props) {
     );
   }
 
+  function handleClick(session: SessionItem) {
+    if (session.status === 'completed') {
+      navigate(`/interview/feedback?sessionId=${session.sessionId}`);
+    }
+  }
+
   return (
     <div className="session-list">
       {sessions.map((session) => (
-        <div key={session.sessionId} className="session-list-item">
+        <div
+          key={session.sessionId}
+          className={`session-list-item ${session.status === 'completed' ? 'session-list-item--clickable' : ''}`}
+          onClick={() => handleClick(session)}
+          role={session.status === 'completed' ? 'button' : undefined}
+          tabIndex={session.status === 'completed' ? 0 : undefined}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && session.status === 'completed') handleClick(session);
+          }}
+        >
           <div className="session-list-item-left">
             <span className="session-list-type">
               {TYPE_LABELS[session.interviewType] || session.interviewType}

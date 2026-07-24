@@ -1,10 +1,31 @@
 .feedback {
   max-width: 680px;
-  padding-bottom: 48px;
+  margin: 0 auto;
+  padding: 60px 32px 48px;
+  min-height: 100vh;
 }
 
 .feedback-header {
   margin-bottom: 32px;
+}
+
+.feedback-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 6px 0;
+  margin-bottom: 16px;
+  transition: color 0.12s ease;
+}
+
+.feedback-back:hover {
+  color: #f5f5f5;
 }
 
 .feedback-title {
@@ -51,7 +72,7 @@
 /* Overall scores */
 .feedback-scores {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
   margin-bottom: 28px;
 }
