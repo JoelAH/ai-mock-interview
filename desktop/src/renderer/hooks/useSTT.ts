@@ -42,8 +42,8 @@ export function useSTT(options: UseSTTOptions = {}): UseSTTReturn {
     // Get scoped token from backend
     const { token, url } = await api.deepgramToken();
 
-    // Open WebSocket with token as subprotocol
-    const ws = new WebSocket(url, ['token', token]);
+    // Open WebSocket with scoped JWT via bearer subprotocol
+    const ws = new WebSocket(url, ['bearer', token]);
     ws.binaryType = 'arraybuffer';
     wsRef.current = ws;
 
@@ -115,9 +115,9 @@ export function useSTT(options: UseSTTOptions = {}): UseSTTReturn {
           setInterimText('');
           options.onFinalTranscript?.(accumulatedRef.current);
         } else {
-          // Interim (partial) result
+          // Interim (partial) result — only the current partial segment
           setInterimText(text);
-          options.onInterimTranscript?.(accumulatedRef.current + ' ' + text);
+          options.onInterimTranscript?.(text);
         }
       } catch {
         // Ignore non-JSON messages
