@@ -22,6 +22,8 @@ interface UseSTTReturn {
   isListening: boolean;
   transcript: string;
   interimText: string;
+  /** Returns the current full transcript directly from the ref (not stale state). */
+  getTranscript: () => string;
   start: () => Promise<void>;
   stop: () => void;
   reset: () => void;
@@ -36,7 +38,9 @@ export function useSTT(options: UseSTTOptions = {}): UseSTTReturn {
   const streamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
-  const accumulatedRef = useRef('');
+  // Track finals as an array of segments — avoids duplication from overlapping results
+  const finalsRef = useRef<string[]>([]);
+  const interimRef = useRef<string>('');
 
   const start = useCallback(async () => {
     // Get scoped token from backend
@@ -98,8 +102,7 @@ export function useSTT(options: UseSTTOptions = {}): UseSTTReturn {
         };
 
         if (data.type === 'UtteranceEnd') {
-          // User stopped speaking — finalize
-          if (accumulatedRef.current.trim()) {
+          if (finalsRef.current.length > 0) {
             options.onUtteranceEnd?.();
           }
           return;
@@ -109,13 +112,17 @@ export function useSTT(options: UseSTTOptions = {}): UseSTTReturn {
         if (!text) return;
 
         if (data.is_final) {
-          // Final result for this speech segment
-          accumulatedRef.current += (accumulatedRef.current ? ' ' : '') + text;
-          setTranscript(accumulatedRef.current);
+          // Commit this segment to the finals array
+          finalsRef.current.push(text);
+          interimRef.current = '';
+
+          const fullText = finalsRef.current.join(' ');
+          setTranscript(fullText);
           setInterimText('');
-          options.onFinalTranscript?.(accumulatedRef.current);
+          options.onFinalTranscript?.(fullText);
         } else {
-          // Interim (partial) result — only the current partial segment
+          // Interim — just replace the current partial
+          interimRef.current = text;
           setInterimText(text);
           options.onInterimTranscript?.(text);
         }
@@ -143,7 +150,8 @@ export function useSTT(options: UseSTTOptions = {}): UseSTTReturn {
   }, []);
 
   const reset = useCallback(() => {
-    accumulatedRef.current = '';
+    finalsRef.current = [];
+    interimRef.current = '';
     setTranscript('');
     setInterimText('');
   }, []);
@@ -165,10 +173,20 @@ export function useSTT(options: UseSTTOptions = {}): UseSTTReturn {
     setIsListening(false);
   }
 
+  /** Get the current transcript directly from the ref — always fresh, no stale closure issues. */
+  const getTranscript = useCallback(() => {
+    const parts = [...finalsRef.current];
+    if (interimRef.current) {
+      parts.push(interimRef.current);
+    }
+    return parts.join(' ').trim();
+  }, []);
+
   return {
     isListening,
     transcript,
     interimText,
+    getTranscript,
     start,
     stop,
     reset,

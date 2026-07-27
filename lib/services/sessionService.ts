@@ -81,9 +81,11 @@ Question type labeling:
 
 Question distribution:
 - Prioritize technical and architectural questions that probe the candidate's understanding of the technologies, systems, and patterns mentioned in the role/stack/focus areas.
+- Items listed earlier in the tech stack and focus areas are MORE IMPORTANT — they reflect the JD's priority order. Start with those before moving to items listed later.
 - Aim for roughly 40-50% technical questions, 20-30% architectural questions, and 20-30% behavioral questions.
 - Behavioral questions should focus on technical leadership, decision-making, and problem-solving — not generic "meetings and collaboration" topics.
 - Draw questions directly from the tech stack and focus areas provided in the session context.
+- Do NOT over-index on testing, tooling, or "nice to have" skills. Prioritize core competencies (languages, frameworks, databases, architecture) first.
 
 Rules:
 - Keep questions concise (1-3 sentences).
@@ -128,12 +130,13 @@ async function buildContextMessage(sessionId: string): Promise<string> {
   }
 
   // Lean context — role + type + focus areas only (not the full JD text)
+  // Items are listed in priority order (first = most important from the JD)
   return [
     `Role: ${signals.role}`,
     `Seniority: ${signals.seniority}`,
     `Interview type: ${session.interviewType}`,
-    `Focus areas: ${signals.focusAreas?.join(', ') || 'general'}`,
-    `Tech stack: ${signals.stack?.join(', ') || 'general'}`,
+    `Focus areas (in priority order — earlier = more important): ${signals.focusAreas?.join(', ') || 'general'}`,
+    `Tech stack (in priority order — earlier = more important): ${signals.stack?.join(', ') || 'general'}`,
   ].join('\n');
 }
 
@@ -327,6 +330,15 @@ const realSessionService: ISessionService = {
     const contextMessage = await buildContextMessage(sessionId);
     const history = await buildConversationHistory(sessionId);
 
+    // Build a list of topics already covered to prevent repetition
+    const topicsCovered = existingQuestions
+      .filter((q) => !q.isFollowUp)
+      .map((q, i) => `${i + 1}. ${q.text.slice(0, 80)}`)
+      .join('\n');
+    const topicsNote = topicsCovered
+      ? `\n\nTopics already asked (DO NOT repeat or rephrase these):\n${topicsCovered}`
+      : '';
+
     // 5. Call LLM for the next turn decision — include followup count so LLM is aware
     const followupWarning = consecutiveFollowups >= MAX_CONSECUTIVE_FOLLOWUPS
       ? `\n\nIMPORTANT: You have already asked ${consecutiveFollowups} consecutive follow-ups. You MUST advance to a new topic now. Set action to "advance" and isFollowUp to false.`
@@ -338,7 +350,7 @@ const realSessionService: ISessionService = {
       { role: 'system', content: ORCHESTRATOR_SYSTEM_PROMPT },
       {
         role: 'user',
-        content: `Session context:\n${contextMessage}\n\nThe interview is in progress. Based on the conversation so far, decide the next action and generate the next question (or end the interview if appropriate). Question count so far: ${currentOrder}.${followupWarning}`,
+        content: `Session context:\n${contextMessage}\n\nThe interview is in progress. Based on the conversation so far, decide the next action and generate the next question (or end the interview if appropriate). Question count so far: ${currentOrder}.${topicsNote}${followupWarning}`,
       },
       ...history,
       // The latest answer appended again explicitly in case it wasn't in history yet

@@ -26,9 +26,9 @@ const JD_PARSE_SYSTEM_PROMPT = `You are a job description analyst for an AI mock
 Given a job description, extract the following structured information:
 - role: The job title as stated (or best inferred)
 - seniority: The seniority level with years if mentioned (e.g. "Senior (5+ years)", "Mid-level", "Staff")
-- stack: An array of technologies, languages, frameworks, and tools mentioned or strongly implied
+- stack: An array of technologies, languages, frameworks, and tools mentioned or strongly implied. IMPORTANT: preserve the order they appear in the JD — items listed first are higher priority.
 - culture: An array of cultural values and workplace norms mentioned (e.g. "remote-first", "collaborative", "ownership")
-- focusAreas: An array of key technical or domain areas the role focuses on (e.g. "distributed systems", "payments", "frontend performance")
+- focusAreas: An array of key technical or domain areas the role focuses on (e.g. "distributed systems", "payments", "frontend performance"). IMPORTANT: list items from "Required" sections before items from "Preferred" or "Nice to have" sections. Order reflects priority.
 - interviewType: Choose the best interview type:
   - "behavioral" — if the role emphasizes leadership, soft skills, people management
   - "technical" — if it emphasizes specific language/framework knowledge or CS fundamentals
@@ -36,7 +36,7 @@ Given a job description, extract the following structured information:
   - "mix" — if it spans multiple areas (most common for senior+ IC roles)
 - estimatedMinutes: Estimate interview length (20 for junior/narrow roles, 25-30 for senior, 30-35 for staff+)
 
-Be thorough but concise. Extract what is explicitly stated or strongly implied. Do not fabricate information not present in the JD.`;
+Be thorough but concise. Extract what is explicitly stated or strongly implied. Do not fabricate information not present in the JD. Preserve ordering from the original JD to reflect priority.`;
 
 export const jdService: IJdService = {
   async parse(userId: string, jdText: string, sourceType: 'paste' | 'preset'): Promise<JdParseResponse> {

@@ -116,10 +116,12 @@ export default function InterviewSession() {
   }
 
   const handleDoneAnswering = useCallback(async () => {
+    // Get the transcript BEFORE stopping — once we stop, no more data comes in
+    const finalTranscript = stt.getTranscript() || liveTranscript.trim();
+
     // Stop STT
     stt.stop();
 
-    const finalTranscript = stt.transcript.trim() || liveTranscript.trim();
     if (!finalTranscript) {
       // No speech detected — go back to listening
       beginListening();
@@ -211,7 +213,7 @@ export default function InterviewSession() {
           <span className="interview-phase-chip">{phase}</span>
           {question && (
             <span className="interview-question-count">
-              Question {question.order}
+              Question {question.order + 1}
             </span>
           )}
         </div>
@@ -280,9 +282,9 @@ export default function InterviewSession() {
             <div className="interview-transcript">
               <p className="interview-transcript-text">
                 {liveTranscript}
-                {interimText && (
+                {interimText && !liveTranscript.trimEnd().endsWith(interimText.trim()) && (
                   <span className="interview-transcript-interim">
-                    {' '}{interimText}
+                    {' '}{dedupeInterim(liveTranscript, interimText)}
                   </span>
                 )}
               </p>
@@ -313,4 +315,33 @@ export default function InterviewSession() {
       </div>
     </div>
   );
+}
+
+
+/**
+ * Remove overlapping words between the end of the finalized transcript
+ * and the beginning of the interim text. Deepgram often sends interim
+ * results that repeat the tail of the last committed final.
+ */
+function dedupeInterim(finals: string, interim: string): string {
+  if (!finals || !interim) return interim;
+
+  const finalWords = finals.trimEnd().split(/\s+/);
+  const interimWords = interim.trim().split(/\s+/);
+
+  // Find the longest overlap: check if the last N words of finals
+  // match the first N words of interim
+  const maxOverlap = Math.min(finalWords.length, interimWords.length);
+
+  for (let overlap = maxOverlap; overlap > 0; overlap--) {
+    const finalTail = finalWords.slice(-overlap).join(' ').toLowerCase();
+    const interimHead = interimWords.slice(0, overlap).join(' ').toLowerCase();
+
+    if (finalTail === interimHead) {
+      // Strip the overlapping prefix from interim
+      return interimWords.slice(overlap).join(' ');
+    }
+  }
+
+  return interim;
 }
