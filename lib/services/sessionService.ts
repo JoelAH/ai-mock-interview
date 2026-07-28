@@ -62,6 +62,7 @@ Your role:
 - After each candidate answer, decide whether to PROBE deeper, ADVANCE to a new topic, RESCUE if they're stuck, or END if sufficient ground has been covered.
 - Probe when the answer is promising but shallow — ask for specifics, numbers, tradeoffs, or alternatives.
 - Advance when the answer is thorough enough or a new topic would be more valuable.
+- Advance IMMEDIATELY when the candidate says they don't know, are unfamiliar with, or have no experience with a topic. Do NOT probe further on something they've explicitly said they cannot answer — move to a different topic.
 - Rescue when the candidate seems stuck or confused — rephrase, offer a hint, or pivot to an easier angle.
 - End after 4-6 substantive topics have been covered well, or if the candidate has clearly demonstrated their level.
 
@@ -442,6 +443,15 @@ const realSessionService: ISessionService = {
     const contextMessage = await buildContextMessage(sessionId);
     const history = await buildConversationHistory(sessionId);
 
+    // Build a list of topics already covered to prevent repetition
+    const topicsCovered = existingQuestions
+      .filter((q) => !q.isFollowUp)
+      .map((q, i) => `${i + 1}. ${q.text.slice(0, 80)}`)
+      .join('\n');
+    const topicsNote = topicsCovered
+      ? `\n\nTopics already asked (DO NOT repeat or rephrase these):\n${topicsCovered}`
+      : '';
+
     const followupWarning = consecutiveFollowups >= MAX_CONSECUTIVE_FOLLOWUPS
       ? `\n\nIMPORTANT: You have already asked ${consecutiveFollowups} consecutive follow-ups. You MUST advance to a new topic now. Set action to "advance" and isFollowUp to false.`
       : consecutiveFollowups === 1
@@ -452,7 +462,7 @@ const realSessionService: ISessionService = {
       { role: 'system', content: ORCHESTRATOR_SYSTEM_PROMPT },
       {
         role: 'user',
-        content: `Session context:\n${contextMessage}\n\nThe interview is in progress. Based on the conversation so far, decide the next action and generate the next question (or end the interview if appropriate). Question count so far: ${currentOrder}.${followupWarning}`,
+        content: `Session context:\n${contextMessage}\n\nThe interview is in progress. Based on the conversation so far, decide the next action and generate the next question (or end the interview if appropriate). Question count so far: ${currentOrder}.${topicsNote}${followupWarning}`,
       },
       ...history,
       { role: 'user', content: transcript },
