@@ -32,7 +32,7 @@ afterAll(async () => {
 // ---------------------------------------------------------------------------
 // Helper: generate a signed Clerk webhook payload
 // ---------------------------------------------------------------------------
-const TEST_WEBHOOK_SECRET = 'whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw';
+const TEST_WEBHOOK_SECRET = 'whsec_dGVzdF9mYWtlX3NlY3JldF9mb3JfdW5pdF90ZXN0cw==';
 
 function createSignedPayload(eventType: string, data: Record<string, unknown>) {
   const body = JSON.stringify({ type: eventType, data });
