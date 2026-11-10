@@ -19,7 +19,7 @@
     "@mui/icons-material": "^9.1.1",
     "@mui/material": "^9.1.2",
     "@mui/material-nextjs": "^9.1.1",
-    "mongoose": "^9.7.3",
+    "mongoose": "^9.11.4",
     "next": "16.2.9",
     "openai": "^6.45.0",
     "react": "19.2.4",
